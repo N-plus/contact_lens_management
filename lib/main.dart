@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -414,277 +416,390 @@ class ContactLensState extends ChangeNotifier {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
   Widget build(BuildContext context) {
-    final dateFormatter = DateFormat('yyyy/MM/dd');
+    final state = context.watch<ContactLensState>();
+    final themeColor = state.themeColor;
+    final isOverdue = state.overdueDays > 0;
+    final daysRemaining = state.remainingDays;
+    final daysOverdue = state.overdueDays;
+    final startDate = state.startDate;
+    final exchangeDate = state.exchangeDate;
 
-    return Consumer<ContactLensState>(
-      builder: (context, state, _) {
-        final remaining = state.remainingDays;
-        final overdue = state.overdueDays;
-        final exchangeDate = state.exchangeDate;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('レンズ交換スケジュール'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              )
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('コンタクト交換管理'),
+        backgroundColor: themeColor,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const SettingsScreen(),
+                ),
+              );
+            },
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 16),
-                Expanded(
-                  child: Center(
-                    child: SizedBox(
-                      height: 240,
-                      width: 240,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SizedBox.expand(
-                            child: CircularProgressIndicator(
-                              value: state.progress,
-                              strokeWidth: 12,
-                            ),
-                          ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                overdue > 0
-                                    ? '交換超過 $overdue 日'
-                                    : '残り$remaining日',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                '開始日 ${dateFormatter.format(state.startDate)}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Text(
-                                '交換日 ${dateFormatter.format(exchangeDate)}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
-                        ],
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 280,
+                height: 280,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(280, 280),
+                      painter: CircularProgressPainter(
+                        progress: state.progress,
+                        color: isOverdue ? Colors.red : themeColor,
+                        backgroundColor: Colors.grey[200]!,
                       ),
                     ),
-                  ),
-                ),
-                if (state.shouldShowInventoryAlert)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .errorContainer
-                          .withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          color: Theme.of(context).colorScheme.error,
+                        Text(
+                          isOverdue ? '交換超過' : '残り',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            '在庫が残り ${state.inventoryCount} 個です。お早めにご用意ください',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isOverdue ? '$daysOverdue' : '$daysRemaining',
+                          style: TextStyle(
+                            fontSize: 72,
+                            fontWeight: FontWeight.bold,
+                            color: isOverdue ? Colors.red : themeColor,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '日',
+                          style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.grey[700],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                FilledButton.icon(
-                  onPressed: () => _showExchangeSheet(context),
-                  icon: const Icon(Icons.refresh),
-                  label: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      'レンズを交換する',
-                      style: TextStyle(fontSize: 18),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '開始日',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          _formatDate(startDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '交換日',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          _formatDate(exchangeDate),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: isOverdue ? Colors.red : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              if (state.shouldShowInventoryAlert) ...[
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange[300]!,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange[700],
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '在庫が残り ${state.inventoryCount} 個です。お早めにご用意ください',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.orange[900],
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showExchangeSheet(BuildContext context) async {
-    final state = context.read<ContactLensState>();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: false,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'レンズ交換を記録',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge
-                      ?.copyWith(fontWeight: FontWeight.bold),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () => _showExchangeModal(state),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: themeColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'レンズを交換する',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.today),
-                title: const Text('今日交換した'),
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  state.recordExchangeToday();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('開始日を本日にリセットしました'),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.event_available),
-                title: const Text('予定日を選ぶ'),
-                onTap: () async {
-                  Navigator.of(ctx).pop();
-                  await Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const DateSelectionPage(),
-                      fullscreenDialog: true,
-                    ),
-                  );
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.close),
-                title: const Text('キャンセル'),
-                onTap: () => Navigator.of(ctx).pop(),
-              ),
-              const SizedBox(height: 8),
             ],
           ),
-        );
-      },
-    );
-  }
-}
-
-class DateSelectionPage extends StatefulWidget {
-  const DateSelectionPage({super.key});
-
-  @override
-  State<DateSelectionPage> createState() => _DateSelectionPageState();
-}
-
-class _DateSelectionPageState extends State<DateSelectionPage> {
-  late DateTime _selectedDate;
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
-    _selectedDate = tomorrow;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<ContactLensState>();
-    final exchangeDate = _selectedDate.add(Duration(days: state.cycleLength));
-    final formatter = DateFormat('yyyy/MM/dd');
-
-    final now = DateTime.now();
-    final todayOnly = DateTime(now.year, now.month, now.day);
-    final firstSelectable = todayOnly.add(const Duration(days: 1));
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('交換予定日を選択'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '開始日: ${formatter.format(_selectedDate)}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '交換予定日: ${formatter.format(exchangeDate)}',
-              style: Theme.of(context).textTheme.bodyLarge,
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: CalendarDatePicker(
-                initialDate: _selectedDate,
-                firstDate: firstSelectable,
-                lastDate: firstSelectable.add(const Duration(days: 365 * 2)),
-                selectableDayPredicate: (date) {
-                  final selectedDay = DateTime(date.year, date.month, date.day);
-                  return selectedDay.isAfter(todayOnly);
-                },
-                onDateChanged: (value) {
-                  setState(() {
-                    _selectedDate = DateTime(value.year, value.month, value.day);
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () async {
-                await state.recordExchangeOn(_selectedDate);
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text('保存'),
-              ),
-            ),
-          ],
         ),
       ),
     );
+  }
+
+  void _showExchangeModal(ContactLensState state) {
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: Text(
+                  'レンズ交換を記録',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                title: const Text(
+                  '今日交換した',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+                onTap: () async {
+                  Navigator.pop(bottomSheetContext);
+                  await _recordExchangeToday(state);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                title: const Text(
+                  '予定日を選ぶ',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+                onTap: () async {
+                  Navigator.pop(bottomSheetContext);
+                  await _selectDate(state);
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                title: const Text(
+                  'キャンセル',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                onTap: () => Navigator.pop(bottomSheetContext),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _recordExchangeToday(ContactLensState state) async {
+    final inventoryBefore = state.inventoryCount;
+    await state.recordExchangeToday();
+    if (inventoryBefore > 0) {
+      await state.setInventoryCount(inventoryBefore - 1);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('開始日を本日にリセットしました'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _selectDate(ContactLensState state) async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('ja'),
+      builder: (dialogContext, child) {
+        return Theme(
+          data: Theme.of(dialogContext).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: state.themeColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (selected != null) {
+      final inventoryBefore = state.inventoryCount;
+      await state.recordExchangeOn(selected);
+      if (inventoryBefore > 0) {
+        await state.setInventoryCount(inventoryBefore - 1);
+      }
+      if (!mounted) {
+        return;
+      }
+
+      final exchangePreview = selected.add(Duration(days: state.cycleLength));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '開始日: ${_formatDate(selected)}\n交換予定日: ${_formatDate(exchangePreview)}',
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}年${date.month}月${date.day}日';
+  }
+}
+
+class CircularProgressPainter extends CustomPainter {
+  CircularProgressPainter({
+    required this.progress,
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  final double progress;
+  final Color color;
+  final Color backgroundColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    const strokeWidth = 16.0;
+
+    final bgPaint = Paint()
+      ..color = backgroundColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawCircle(center, radius - strokeWidth / 2, bgPaint);
+
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    const startAngle = -math.pi / 2;
+    final sweepAngle = 2 * math.pi * progress;
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
+      startAngle,
+      sweepAngle,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CircularProgressPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.color != color ||
+        oldDelegate.backgroundColor != backgroundColor;
   }
 }
 
