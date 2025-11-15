@@ -748,8 +748,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.year}年${date.month}月${date.day}日';
+    return '${date.year}年${date.month}月${date.day}日（${getWeekdayLabel(date)}）';
   }
+}
+
+String getWeekdayLabel(DateTime date) {
+  const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
+  return weekDays[date.weekday - 1];
 }
 
 class CircularProgressPainter extends CustomPainter {
