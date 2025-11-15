@@ -446,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const SettingsScreen(),
+                  builder: (_) => const SettingsPage(),
                 ),
               );
             },
@@ -803,300 +803,399 @@ class CircularProgressPainter extends CustomPainter {
   }
 }
 
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final formatter = DateFormat('HH:mm');
+    return Consumer<ContactLensState>(
+      builder: (context, state, _) {
+        final cyclePeriod =
+            state.cycleLength == ContactLensState.oneMonthCycle ? '1month' : '2week';
+        final themeColor = state.themeColor;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('設定'),
-      ),
-      body: Consumer<ContactLensState>(
-        builder: (context, state, _) {
-          return ListView(
-            padding: const EdgeInsets.all(24),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('設定'),
+            backgroundColor: themeColor,
+            elevation: 0,
+          ),
+          body: ListView(
             children: [
-              Text(
-                '交換周期',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<int>(
-                segments: const <ButtonSegment<int>>[
-                  ButtonSegment<int>(value: ContactLensState.twoWeekCycle, label: Text('2week')),
-                  ButtonSegment<int>(value: ContactLensState.oneMonthCycle, label: Text('1month')),
-                ],
-                selected: <int>{state.cycleLength},
-                onSelectionChanged: (values) {
-                  state.setCycleLength(values.first);
+              _buildSectionHeader('交換周期'),
+              _buildRadioTile(
+                title: '2week（14日）',
+                value: '2week',
+                groupValue: cyclePeriod,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  if (value == '2week') {
+                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                  } else if (value == '1month') {
+                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                  }
                 },
               ),
-              const SizedBox(height: 32),
-              Text(
-                '通知設定',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+              _buildRadioTile(
+                title: '1month（30日）',
+                value: '1month',
+                groupValue: cyclePeriod,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  if (value == '2week') {
+                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                  } else if (value == '1month') {
+                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                  }
+                },
               ),
-              const SizedBox(height: 12),
-              _NotificationTile(
+              const Divider(height: 32),
+              _buildSectionHeader('通知'),
+              _buildSwitchTile(
                 title: '前日通知',
-                enabled: state.notifyDayBefore,
-                timeLabel: formatter.format(
-                  DateTime(0, 1, 1, state.notifyDayBeforeTime.hour, state.notifyDayBeforeTime.minute),
-                ),
-                onToggle: (value) {
+                subtitle:
+                    state.notifyDayBefore ? _formatTime(state.notifyDayBeforeTime) : null,
+                value: state.notifyDayBefore,
+                activeColor: themeColor,
+                onChanged: (value) {
                   state.setNotifyDayBefore(value);
                 },
-                onPickTime: () async {
-                  final selected = await _pickTime(context, state.notifyDayBeforeTime);
-                  if (selected != null) {
-                    state.setNotifyDayBeforeTime(selected);
-                  }
-                },
               ),
-              _NotificationTile(
-                title: '当日通知',
-                enabled: state.notifyDayOf,
-                timeLabel: formatter.format(
-                  DateTime(0, 1, 1, state.notifyDayOfTime.hour, state.notifyDayOfTime.minute),
+              if (state.notifyDayBefore)
+                _buildTimeTile(
+                  context: context,
+                  title: '前日通知時刻',
+                  time: state.notifyDayBeforeTime,
+                  onTap: () => _selectTime(context, state, isDayBefore: true),
                 ),
-                onToggle: (value) {
+              _buildSwitchTile(
+                title: '当日通知',
+                subtitle: state.notifyDayOf ? _formatTime(state.notifyDayOfTime) : null,
+                value: state.notifyDayOf,
+                activeColor: themeColor,
+                onChanged: (value) {
                   state.setNotifyDayOf(value);
                 },
-                onPickTime: () async {
-                  final selected = await _pickTime(context, state.notifyDayOfTime);
-                  if (selected != null) {
-                    state.setNotifyDayOfTime(selected);
-                  }
-                },
               ),
-              SwitchListTile.adaptive(
-                title: const Text('自動スケジュール更新'),
-                value: state.autoSchedule,
-                onChanged: (value) {
-                  state.setAutoSchedule(value);
-                },
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'テーマカラー',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                children: [
-                  for (var i = 0; i < state.availableThemeColors.length; i++)
-                    GestureDetector(
-                      onTap: () => state.setThemeColorIndex(i),
-                      child: Container(
-                        height: 44,
-                        width: 44,
-                        decoration: BoxDecoration(
-                          color: state.availableThemeColors[i],
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: i == state.themeColorIndex
-                                ? Theme.of(context).colorScheme.onPrimary
-                                : Colors.transparent,
-                            width: 3,
-                          ),
-                        ),
-                        child: i == state.themeColorIndex
-                            ? const Icon(Icons.check, color: Colors.white)
-                            : null,
+              if (state.notifyDayOf)
+                _buildTimeTile(
+                  context: context,
+                  title: '当日通知時刻',
+                  time: state.notifyDayOfTime,
+                  onTap: () => _selectTime(context, state, isDayBefore: false),
+                ),
+              const Divider(height: 32),
+              _buildSectionHeader('テーマカラー'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    for (var i = 0; i < state.availableThemeColors.length; i++)
+                      _buildColorOption(
+                        color: state.availableThemeColors[i],
+                        isSelected: i == state.themeColorIndex,
+                        onTap: () => state.setThemeColorIndex(i),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: 32),
-              Text(
-                '在庫',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              SwitchListTile.adaptive(
-                title: const Text('在庫数を表示'),
+              const Divider(height: 32),
+              _buildSectionHeader('在庫'),
+              _buildSwitchTile(
+                title: '在庫数を表示',
                 value: state.showInventory,
+                activeColor: themeColor,
                 onChanged: (value) {
                   state.setShowInventory(value);
                 },
               ),
               if (state.showInventory) ...[
-                _NumberField(
-                  label: '現在の在庫',
-                  initialValue: state.inventoryCount,
-                  onChanged: (value) {
-                    state.setInventoryCount(value);
-                  },
-                ),
-                _NumberField(
-                  label: 'N個以下で通知',
-                  initialValue: state.inventoryThreshold,
-                  onChanged: (value) {
-                    state.setInventoryThreshold(value);
-                  },
-                ),
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Future<TimeOfDay?> _pickTime(BuildContext context, TimeOfDay current) async {
-    final isCupertino = Theme.of(context).platform == TargetPlatform.iOS ||
-        Theme.of(context).platform == TargetPlatform.macOS;
-
-    if (isCupertino) {
-      TimeOfDay? selected;
-      await showCupertinoModalPopup<void>(
-        context: context,
-        builder: (ctx) {
-          return Container(
-            height: 260,
-            color: Colors.white,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 200,
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.time,
-                    initialDateTime: DateTime(
-                      0,
-                      1,
-                      1,
-                      current.hour,
-                      current.minute,
-                    ),
-                    onDateTimeChanged: (value) {
-                      selected = TimeOfDay.fromDateTime(value);
-                    },
+                ListTile(
+                  title: const Text('現在の在庫'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${state.inventoryCount} 個',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    ],
+                  ),
+                  onTap: () => _showInventoryPicker(
+                    context,
+                    state,
+                    isCurrentInventory: true,
                   ),
                 ),
-                CupertinoButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('完了'),
+                ListTile(
+                  title: const Text('お知らせ基準'),
+                  subtitle: Text('${state.inventoryThreshold} 個以下で通知'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${state.inventoryThreshold} 個',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    ],
+                  ),
+                  onTap: () => _showInventoryPicker(
+                    context,
+                    state,
+                    isCurrentInventory: false,
+                  ),
                 ),
               ],
-            ),
-          );
-        },
-      );
-      return selected ?? current;
-    }
+              const Divider(height: 32),
+              _buildSectionHeader('自動更新'),
+              _buildSwitchTile(
+                title: '自動スケジュール更新',
+                subtitle: '交換日到来時に次周期へ自動更新',
+                value: state.autoSchedule,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  state.setAutoSchedule(value);
+                },
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
-    return showTimePicker(
+  Future<void> _selectTime(
+    BuildContext context,
+    ContactLensState state, {
+    required bool isDayBefore,
+  }) async {
+    final initialTime = isDayBefore ? state.notifyDayBeforeTime : state.notifyDayOfTime;
+
+    final picked = await showTimePicker(
       context: context,
-      initialTime: current,
+      initialTime: initialTime,
+      builder: (dialogContext, child) {
+        return Theme(
+          data: Theme.of(dialogContext).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: state.themeColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
-  }
-}
 
-class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({
-    required this.title,
-    required this.enabled,
-    required this.timeLabel,
-    required this.onToggle,
-    required this.onPickTime,
-  });
-
-  final String title;
-  final bool enabled;
-  final String timeLabel;
-  final ValueChanged<bool> onToggle;
-  final Future<void> Function() onPickTime;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(title),
-      subtitle: Text('通知時刻: $timeLabel'),
-      trailing: Switch.adaptive(
-        value: enabled,
-        onChanged: onToggle,
-      ),
-      onTap: enabled
-          ? () {
-              onPickTime();
-            }
-          : null,
-    );
-  }
-}
-
-class _NumberField extends StatefulWidget {
-  const _NumberField({
-    required this.label,
-    required this.initialValue,
-    required this.onChanged,
-  });
-
-  final String label;
-  final int initialValue;
-  final ValueChanged<int> onChanged;
-
-  @override
-  State<_NumberField> createState() => _NumberFieldState();
-}
-
-class _NumberFieldState extends State<_NumberField> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue.toString());
-  }
-
-  @override
-  void didUpdateWidget(covariant _NumberField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.initialValue != widget.initialValue &&
-        _controller.text != widget.initialValue.toString()) {
-      _controller.text = widget.initialValue.toString();
+    if (picked != null) {
+      if (isDayBefore) {
+        await state.setNotifyDayBeforeTime(picked);
+      } else {
+        await state.setNotifyDayOfTime(picked);
+      }
     }
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Future<void> _showInventoryPicker(
+    BuildContext context,
+    ContactLensState state, {
+    required bool isCurrentInventory,
+  }) async {
+    final initialValue = isCurrentInventory ? state.inventoryCount : state.inventoryThreshold;
+    final maxValue = math.max(initialValue, 100);
+    final maxCount = maxValue is int ? maxValue : maxValue.toInt();
+    final clampedInitial = initialValue.clamp(0, maxCount);
+    int selectedValue = clampedInitial is int ? clampedInitial : clampedInitial.toInt();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return Container(
+          height: 300,
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: const Text('キャンセル'),
+                    ),
+                    Text(
+                      isCurrentInventory ? '現在の在庫' : 'お知らせ基準',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        if (isCurrentInventory) {
+                          await state.setInventoryCount(selectedValue);
+                        } else {
+                          await state.setInventoryThreshold(selectedValue);
+                        }
+                        if (sheetContext.mounted) {
+                          Navigator.pop(sheetContext);
+                        }
+                      },
+                      child: const Text('完了'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 40,
+                  scrollController: FixedExtentScrollController(
+                    initialItem: selectedValue,
+                  ),
+                  onSelectedItemChanged: (index) {
+                    selectedValue = index;
+                  },
+                  children: List.generate(
+                    maxCount + 1,
+                    (index) => Center(
+                      child: Text(
+                        '$index 個',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextField(
-        controller: _controller,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          border: const OutlineInputBorder(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey[600],
+          letterSpacing: 0.5,
         ),
-        keyboardType: TextInputType.number,
-        onChanged: (value) {
-          final parsed = int.tryParse(value);
-          if (parsed != null) {
-            widget.onChanged(parsed);
-          }
-        },
+      ),
+    );
+  }
+
+  Widget _buildRadioTile({
+    required String title,
+    required String value,
+    required String groupValue,
+    required Color activeColor,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return RadioListTile<String>(
+      title: Text(title),
+      value: value,
+      groupValue: groupValue,
+      activeColor: activeColor,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required String title,
+    String? subtitle,
+    required bool value,
+    required Color activeColor,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile(
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      value: value,
+      activeColor: activeColor,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildTimeTile({
+    required BuildContext context,
+    required String title,
+    required TimeOfDay time,
+    required Future<void> Function() onTap,
+  }) {
+    return ListTile(
+      title: Text(title),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _formatTime(time),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Icon(Icons.chevron_right, color: Colors.grey[400]),
+        ],
+      ),
+      onTap: () {
+        onTap();
+      },
+    );
+  }
+
+  Widget _buildColorOption({
+    required Color color,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected ? Border.all(color: Colors.black, width: 3) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: isSelected
+            ? const Icon(
+                Icons.check,
+                color: Colors.white,
+                size: 32,
+              )
+            : null,
       ),
     );
   }
