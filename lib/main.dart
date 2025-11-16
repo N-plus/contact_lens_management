@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -56,6 +55,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state, _) {
         return MaterialApp(
           title: 'コンタクト交換管理',
+          locale: const Locale('ja', 'JP'),
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
               seedColor: state.themeColor,
@@ -70,6 +70,7 @@ class MyApp extends StatelessWidget {
           ],
           supportedLocales: const [
             Locale('ja', 'JP'),
+            Locale('en', 'US'),
           ],
           home: const HomeScreen(),
         );
