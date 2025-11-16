@@ -63,14 +63,9 @@ class MyApp extends StatelessWidget {
             ),
             useMaterial3: true,
           ),
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           supportedLocales: const [
             Locale('ja'),
-            Locale('en'),
           ],
           home: const HomeScreen(),
         );
