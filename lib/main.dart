@@ -449,6 +449,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
     final isOverdue = state.overdueDays > 0;
+    final Color mainColor = isOverdue ? Colors.red : themeColor;
+    final Color fadedColor = mainColor.withOpacity(0.2);
     final daysRemaining = state.remainingDays;
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
@@ -488,8 +490,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       size: const Size(280, 280),
                       painter: CircularProgressPainter(
                         progress: state.progress,
-                        color: isOverdue ? Colors.red : themeColor,
-                        backgroundColor: Colors.grey[200]!,
+                        color: mainColor,
+                        backgroundColor: fadedColor,
                       ),
                     ),
                     Column(
