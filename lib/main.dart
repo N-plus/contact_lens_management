@@ -530,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
                           Text(
                             '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
                             style: const TextStyle(
@@ -739,10 +739,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 String formatJapaneseDateWithWeekday(DateTime date) {
-  final month = date.month.toString().padLeft(2, '0');
+  final month = date.month.toString();
   final day = date.day.toString().padLeft(2, '0');
   final weekday = getWeekdayLabel(date);
-  return '$month月$day日（$weekday）';
+  return '$month月$day日($weekday)';
 }
 
 String getWeekdayLabel(DateTime date) {
