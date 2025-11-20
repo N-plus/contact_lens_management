@@ -873,6 +873,11 @@ class SettingsPage extends StatelessWidget {
                   }
                 },
               ),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                color: Colors.grey,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
