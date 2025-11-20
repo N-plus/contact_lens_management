@@ -497,82 +497,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          isOverdue ? '交換超過' : '残り',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '交換まで',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isOverdue ? '$daysOverdue' : '$daysRemaining',
+                              style: TextStyle(
+                                fontSize: 56,
+                                fontWeight: FontWeight.bold,
+                                color: isOverdue ? Colors.red : themeColor,
+                                height: 1,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '日',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 12),
                         Text(
-                          isOverdue ? '$daysOverdue' : '$daysRemaining',
+                          _formatDateRange(startDate, exchangeDate),
                           style: TextStyle(
-                            fontSize: 72,
-                            fontWeight: FontWeight.bold,
-                            color: isOverdue ? Colors.red : themeColor,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '日',
-                          style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 14,
                             color: Colors.grey[700],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '開始日',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          _formatDate(startDate),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '交換日',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          _formatDate(exchangeDate),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: isOverdue ? Colors.red : null,
-                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -766,6 +729,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+  }
+
+  String _formatDateRange(DateTime start, DateTime end) {
+    String fmt(DateTime d) =>
+        '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
+    return '${fmt(start)} 〜 ${fmt(end)}';
   }
 
   String _formatDate(DateTime date) {
