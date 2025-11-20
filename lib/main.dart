@@ -480,65 +480,68 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 280,
-                height: 280,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CustomPaint(
-                      size: const Size(280, 280),
-                      painter: CircularProgressPainter(
-                        progress: state.progress,
-                        color: mainColor,
-                        backgroundColor: fadedColor,
+              Transform.translate(
+                offset: const Offset(0, -50),
+                child: SizedBox(
+                  width: 280,
+                  height: 280,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(280, 280),
+                        painter: CircularProgressPainter(
+                          progress: state.progress,
+                          color: mainColor,
+                          backgroundColor: fadedColor,
+                        ),
                       ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '交換まで',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '交換まで',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isOverdue ? '$daysOverdue' : '$daysRemaining',
-                              style: TextStyle(
-                                fontSize: 56,
-                                fontWeight: FontWeight.bold,
-                                color: isOverdue ? Colors.red : themeColor,
-                                height: 1,
+                              const SizedBox(width: 4),
+                              Text(
+                                isOverdue ? '$daysOverdue' : '$daysRemaining',
+                                style: TextStyle(
+                                  fontSize: 56,
+                                  fontWeight: FontWeight.bold,
+                                  color: isOverdue ? Colors.red : themeColor,
+                                  height: 1,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '日',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.grey[600],
+                              const SizedBox(width: 4),
+                              Text(
+                                '日',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey[600],
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(height: 12),
+                          Text(
+                            '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 40),
