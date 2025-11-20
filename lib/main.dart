@@ -530,12 +530,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          _formatDateRange(startDate, exchangeDate),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
+                          '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -731,15 +730,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _formatDateRange(DateTime start, DateTime end) {
-    String fmt(DateTime d) =>
-        '${d.year}/${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}';
-    return '${fmt(start)} 〜 ${fmt(end)}';
-  }
-
   String _formatDate(DateTime date) {
-    return '${date.year}年${date.month}月${date.day}日（${getWeekdayLabel(date)}）';
+    return formatJapaneseDateWithWeekday(date);
   }
+}
+
+String formatJapaneseDateWithWeekday(DateTime date) {
+  final y = date.year;
+  final m = date.month;
+  final d = date.day;
+  final w = getWeekdayLabel(date);
+  return '${y}年${m}月${d}日（$w）';
 }
 
 String getWeekdayLabel(DateTime date) {
