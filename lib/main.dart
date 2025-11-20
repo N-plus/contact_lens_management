@@ -231,6 +231,15 @@ class ContactLensState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> shiftStartDateByDays(int days) async {
+    final current = _dateOnly(_startDate);
+    _startDate = current.add(Duration(days: days));
+    _autoAdvanceIfNeeded();
+    await _persist();
+    await _rescheduleNotifications();
+    notifyListeners();
+  }
+
   Future<void> setAutoSchedule(bool value) async {
     _autoSchedule = value;
     _autoAdvanceIfNeeded();
@@ -864,6 +873,41 @@ class SettingsPage extends StatelessWidget {
                   }
                 },
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '開始日',
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    Row(
+                      children: [
+                        _StartDateButton(
+                          icon: Icons.remove,
+                          onTap: () => state.shiftStartDateByDays(-1),
+                          color: themeColor,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _formatSimpleDate(state.startDate),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        _StartDateButton(
+                          icon: Icons.add,
+                          onTap: () => state.shiftStartDateByDays(1),
+                          color: themeColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               const Divider(height: 32),
               _buildSectionHeader('通知'),
               _buildSwitchTile(
@@ -1027,6 +1071,13 @@ class SettingsPage extends StatelessWidget {
     final hour = time.hour.toString().padLeft(2, '0');
     final minute = time.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
+  }
+
+  String _formatSimpleDate(DateTime date) {
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$y/$m/$d';
   }
 
   Future<void> _showInventoryPicker(
@@ -1211,6 +1262,35 @@ class SettingsPage extends StatelessWidget {
                 size: 32,
               )
             : null,
+      ),
+    );
+  }
+}
+
+class _StartDateButton extends StatelessWidget {
+  const _StartDateButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 48,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Icon(icon, color: Colors.white, size: 20),
       ),
     );
   }
