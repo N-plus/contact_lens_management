@@ -739,10 +739,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 String formatJapaneseDateWithWeekday(DateTime date) {
-  final m = date.month;
-  final d = date.day;
-  final w = getWeekdayLabel(date);
-  return '${m}月${d}日（$w）';
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  final weekday = getWeekdayLabel(date);
+  return '$month月$day日（$weekday）';
 }
 
 String getWeekdayLabel(DateTime date) {
