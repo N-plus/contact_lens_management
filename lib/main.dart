@@ -477,25 +477,45 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('コンタクト交換管理'),
         backgroundColor: themeColor,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const SettingsPage(),
-                ),
-              );
-            },
-          ),
-        ],
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+      body: SafeArea(
+        top: false,
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8,
+              right: 16,
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsPage(),
+                      ),
+                    );
+                  },
+                  child: const SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Center(
+                      child: Icon(
+                        Icons.settings,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
               Transform.translate(
                 offset: const Offset(0, -50),
                 child: SizedBox(
