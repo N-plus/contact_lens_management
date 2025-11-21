@@ -496,49 +496,52 @@ class _HomeScreenState extends State<HomeScreen> {
                           backgroundColor: fadedColor,
                         ),
                       ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '交換まで',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 28),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '交換まで',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                isOverdue ? '$daysOverdue' : '$daysRemaining',
-                                style: TextStyle(
-                                  fontSize: 56,
-                                  fontWeight: FontWeight.bold,
-                                  color: isOverdue ? Colors.red : themeColor,
-                                  height: 1,
+                                const SizedBox(width: 4),
+                                Text(
+                                  isOverdue ? '$daysOverdue' : '$daysRemaining',
+                                  style: TextStyle(
+                                    fontSize: 56,
+                                    fontWeight: FontWeight.bold,
+                                    color: isOverdue ? Colors.red : themeColor,
+                                    height: 1,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '日',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
+                                const SizedBox(width: 4),
+                                Text(
+                                  '日',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.grey[600],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey,
+                              ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            Text(
+                              '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
