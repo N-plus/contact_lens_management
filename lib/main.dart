@@ -471,6 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
+    final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
 
     return Scaffold(
       appBar: AppBar(
@@ -516,141 +517,143 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-              Transform.translate(
-                offset: const Offset(0, -50),
-                child: SizedBox(
-                  width: 280,
-                  height: 280,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CustomPaint(
-                        size: const Size(280, 280),
-                        painter: CircularProgressPainter(
-                          progress: state.progress,
-                          color: mainColor,
-                          backgroundColor: fadedColor,
+                    Transform.translate(
+                      offset: const Offset(0, -50),
+                      child: SizedBox(
+                        width: chartSize,
+                        height: chartSize,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            CustomPaint(
+                              size: Size(chartSize, chartSize),
+                              painter: CircularProgressPainter(
+                                progress: state.progress,
+                                color: mainColor,
+                                backgroundColor: fadedColor,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 28),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        '交換まで',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isOverdue ? '$daysOverdue' : '$daysRemaining',
+                                        style: TextStyle(
+                                          fontSize: 56,
+                                          fontWeight: FontWeight.bold,
+                                          color: isOverdue ? Colors.red : themeColor,
+                                          height: 1,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '日',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 28),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
+                    ),
+                    const SizedBox(height: 40),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () => _showExchangeModal(state),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: themeColor,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text(
+                          'レンズを交換する',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (state.shouldShowInventoryAlert) ...[
+                      const SizedBox(height: 20),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.orange[300]!,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Row(
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  '交換まで',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  isOverdue ? '$daysOverdue' : '$daysRemaining',
-                                  style: TextStyle(
-                                    fontSize: 56,
-                                    fontWeight: FontWeight.bold,
-                                    color: isOverdue ? Colors.red : themeColor,
-                                    height: 1,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '日',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orange[700],
+                              size: 24,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                '在庫が残り ${state.inventoryCount} 個です。お早めにご用意ください',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.orange[900],
+                                  height: 1.4,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () => _showExchangeModal(state),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    'レンズを交換する',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              if (state.shouldShowInventoryAlert) ...[
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.orange[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.orange[300]!,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.orange[700],
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '在庫が残り ${state.inventoryCount} 個です。お早めにご用意ください',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.orange[900],
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      ),
+    );
   }
 
   void _showExchangeModal(ContactLensState state) {
