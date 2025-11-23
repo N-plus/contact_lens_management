@@ -808,7 +808,7 @@ class CircularProgressPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    const strokeWidth = 16.0;
+    const strokeWidth = 22.0;
 
     final bgPaint = Paint()
       ..color = backgroundColor
