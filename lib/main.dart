@@ -658,63 +658,45 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showExchangeModal(ContactLensState state) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (bottomSheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Text(
-                  'レンズ交換を記録',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              ListTile(
-                title: const Text(
-                  '今日交換した',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
-                ),
-                onTap: () async {
-                  Navigator.pop(bottomSheetContext);
-                  await _recordExchangeToday(state);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                title: const Text(
-                  '予定日を選ぶ',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16),
-                ),
-                onTap: () async {
-                  Navigator.pop(bottomSheetContext);
-                  await _selectDate(state);
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                title: const Text(
-                  'キャンセル',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
-                ),
-                onTap: () => Navigator.pop(bottomSheetContext),
-              ),
-            ],
-          ),
+      builder: (bottomSheetContext) => ExchangeModalSheet(
+        cycleDays: state.cycleLength,
+        themeColor: state.themeColor,
+        onTodayExchange: () async {
+          Navigator.pop(bottomSheetContext);
+          await _recordExchangeToday(state);
+        },
+        onDateSelected: (selectedDate) async {
+          Navigator.pop(bottomSheetContext);
+          await _recordExchangeOnSelectedDate(state, selectedDate);
+        },
+      ),
+    );
+  }
+
+  Future<void> _recordExchangeOnSelectedDate(
+    ContactLensState state,
+    DateTime selected,
+  ) async {
+    final inventoryBefore = state.inventoryCount;
+    await state.recordExchangeOn(selected);
+    if (inventoryBefore > 0) {
+      await state.setInventoryCount(inventoryBefore - 1);
+    }
+    if (!mounted) {
+      return;
+    }
+
+    final exchangePreview = selected.add(Duration(days: state.cycleLength));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '開始日: ${_formatDate(selected)}\n交換予定日: ${_formatDate(exchangePreview)}',
         ),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -777,6 +759,352 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
+  }
+}
+
+class ExchangeModalSheet extends StatefulWidget {
+  const ExchangeModalSheet({
+    super.key,
+    required this.cycleDays,
+    required this.themeColor,
+    required this.onTodayExchange,
+    required this.onDateSelected,
+  });
+
+  final int cycleDays;
+  final Color themeColor;
+  final VoidCallback onTodayExchange;
+  final Function(DateTime) onDateSelected;
+
+  @override
+  State<ExchangeModalSheet> createState() => _ExchangeModalSheetState();
+}
+
+class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
+  bool _showDatePicker = false;
+  DateTime? _previewStartDate;
+  DateTime? _previewExchangeDate;
+
+  String _formatDate(DateTime date) {
+    return '${date.year}年${date.month}月${date.day}日';
+  }
+
+  Future<void> _selectDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('ja'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: widget.themeColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (selected != null) {
+      setState(() {
+        _previewStartDate = selected;
+        _previewExchangeDate = selected.add(Duration(days: widget.cycleDays));
+      });
+    }
+  }
+
+  void _confirmDateSelection() {
+    if (_previewStartDate != null) {
+      widget.onDateSelected(_previewStartDate!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      constraints: BoxConstraints(maxHeight: _showDatePicker ? maxHeight : 420),
+      child: SingleChildScrollView(
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 12),
+                child: Container(
+                  width: 48,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const Text(
+                'レンズ交換を記録',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_showDatePicker && _previewStartDate != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: widget.themeColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: widget.themeColor.withOpacity(0.25)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '選択プレビュー',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '開始日',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _formatDate(_previewStartDate!),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.themeColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  '交換予定日',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _previewExchangeDate != null
+                                      ? _formatDate(_previewExchangeDate!)
+                                      : '---',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: widget.themeColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (!_showDatePicker) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onTodayExchange,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: widget.themeColor,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '今日交換した',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showDatePicker = true;
+                        });
+                        _selectDate();
+                      },
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '予定日を選ぶ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          'キャンセル',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _showDatePicker = false;
+                                _previewStartDate = null;
+                                _previewExchangeDate = null;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'キャンセル',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _confirmDateSelection,
+                            borderRadius: BorderRadius.circular(14),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              decoration: BoxDecoration(
+                                color: widget.themeColor,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '完了',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: CalendarDatePicker(
+                    initialDate: _previewStartDate ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    onDateChanged: (date) {
+                      setState(() {
+                        _previewStartDate = date;
+                        _previewExchangeDate =
+                            date.add(Duration(days: widget.cycleDays));
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
