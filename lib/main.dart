@@ -498,13 +498,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                  child: const SizedBox(
-                    width: 52,
-                    height: 52,
+                  child: const SizedBox.square(
+                    dimension: 52,
                     child: Center(
                       child: Icon(
                         Icons.settings,
-                        size: 30,
+                        size: 32,
                       ),
                     ),
                   ),
