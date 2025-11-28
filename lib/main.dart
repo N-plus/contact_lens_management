@@ -471,6 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
+    final isBeforeStart = startDate.isAfter(state._today());
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
 
     return Scaffold(
@@ -537,37 +538,50 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        '交換まで',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.grey[600],
-                                        ),
+                                  if (isBeforeStart)
+                                    Text(
+                                      '使用開始前です',
+                                      style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                        color: themeColor,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        isOverdue ? '$daysOverdue' : '$daysRemaining',
-                                        style: TextStyle(
-                                          fontSize: 56,
-                                          fontWeight: FontWeight.bold,
-                                          color: isOverdue ? Colors.red : themeColor,
-                                          height: 1,
+                                    )
+                                  else
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          '交換まで',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.grey[600],
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '日',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.grey[600],
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          isOverdue
+                                              ? '$daysOverdue'
+                                              : '$daysRemaining',
+                                          style: TextStyle(
+                                            fontSize: 56,
+                                            fontWeight: FontWeight.bold,
+                                            color:
+                                                isOverdue ? Colors.red : themeColor,
+                                            height: 1,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '日',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
