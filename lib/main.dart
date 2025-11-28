@@ -949,6 +949,21 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
                 ),
               ] else ...[
                 Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: CalendarDatePicker(
+                    initialDate: _previewStartDate ?? DateTime.now(),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                    onDateChanged: (date) {
+                      setState(() {
+                        _previewStartDate = date;
+                        _previewExchangeDate =
+                            date.add(Duration(days: widget.cycleDays));
+                      });
+                    },
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
                     children: [
@@ -1013,21 +1028,6 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: CalendarDatePicker(
-                    initialDate: _previewStartDate ?? DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                    onDateChanged: (date) {
-                      setState(() {
-                        _previewStartDate = date;
-                        _previewExchangeDate =
-                            date.add(Duration(days: widget.cycleDays));
-                      });
-                    },
                   ),
                 ),
               ],
