@@ -1030,6 +1030,7 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 32),
               ],
             ],
           ),
