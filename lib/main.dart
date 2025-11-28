@@ -716,47 +716,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _selectDate(ContactLensState state) async {
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('ja'),
-      builder: (dialogContext, child) {
-        return Theme(
-          data: Theme.of(dialogContext).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: state.themeColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selected != null) {
-      final inventoryBefore = state.inventoryCount;
-      await state.recordExchangeOn(selected);
-      if (inventoryBefore > 0) {
-        await state.setInventoryCount(inventoryBefore - 1);
-      }
-      if (!mounted) {
-        return;
-      }
-
-      final exchangePreview = selected.add(Duration(days: state.cycleLength));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '開始日: ${_formatDate(selected)}\n交換予定日: ${_formatDate(exchangePreview)}',
-          ),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-    }
-  }
-
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
   }
@@ -787,33 +746,6 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
 
   String _formatDate(DateTime date) {
     return '${date.year}年${date.month}月${date.day}日';
-  }
-
-  Future<void> _selectDate() async {
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-      locale: const Locale('ja'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: widget.themeColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selected != null) {
-      setState(() {
-        _previewStartDate = selected;
-        _previewExchangeDate = selected.add(Duration(days: widget.cycleDays));
-      });
-    }
   }
 
   void _confirmDateSelection() {
@@ -963,15 +895,14 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Material(
                     color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _showDatePicker = true;
-                        });
-                        _selectDate();
-                      },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
+                  child: InkWell(
+                    onTap: () {
+                      setState(() {
+                        _showDatePicker = true;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
