@@ -967,17 +967,24 @@ class _ExchangeModalSheetState extends State<ExchangeModalSheet> {
               ] else ...[
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: CalendarDatePicker(
-                    initialDate: _previewStartDate ?? DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                    onDateChanged: (date) {
-                      setState(() {
-                        _previewStartDate = date;
-                        _previewExchangeDate =
-                            date.add(Duration(days: widget.cycleDays));
-                      });
-                    },
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: Theme.of(context)
+                          .colorScheme
+                          .copyWith(primary: widget.themeColor),
+                    ),
+                    child: CalendarDatePicker(
+                      initialDate: _previewStartDate ?? DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      onDateChanged: (date) {
+                        setState(() {
+                          _previewStartDate = date;
+                          _previewExchangeDate =
+                              date.add(Duration(days: widget.cycleDays));
+                        });
+                      },
+                    ),
                   ),
                 ),
                 Padding(
