@@ -471,7 +471,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
-    final isBeforeStart = startDate.isAfter(state._today());
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final isBeforeStart = start.isAfter(today);
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
 
     return Scaffold(
