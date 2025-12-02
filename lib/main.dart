@@ -467,6 +467,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final isOverdue = state.overdueDays > 0;
     final Color mainColor = isOverdue ? Colors.red : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
+    final cycleLabel = state.cycleLength == ContactLensState.oneMonthCycle
+        ? '1month'
+        : '2week';
     final daysRemaining = state.remainingDays;
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
@@ -528,6 +531,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
+                            Positioned(
+                              top: 12,
+                              left: 12,
+                              child: Text(
+                                cycleLabel,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: themeColor,
+                                ),
+                              ),
+                            ),
                             CustomPaint(
                               size: Size(chartSize, chartSize),
                               painter: CircularProgressPainter(
