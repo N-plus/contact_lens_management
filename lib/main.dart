@@ -532,14 +532,13 @@ class _HomeScreenState extends State<HomeScreen> {
                           alignment: Alignment.center,
                           children: [
                             Positioned(
-                              top: 12,
-                              left: 12,
+                              top: 16,
+                              left: 16,
                               child: Text(
                                 cycleLabel,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: themeColor,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
