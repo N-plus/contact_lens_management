@@ -532,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           alignment: Alignment.center,
                           children: [
                             Positioned(
-                              top: -16,
+                              top: -24,
                               left: 16,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 12),
