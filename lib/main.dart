@@ -530,9 +530,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: chartSize,
                         child: Stack(
                           alignment: Alignment.center,
+                          clipBehavior: Clip.none,
                           children: [
                             Positioned(
-                              top: -24,
+                              top: -26,
                               left: 16,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 12),
