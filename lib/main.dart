@@ -61,6 +61,16 @@ class MyApp extends StatelessWidget {
               seedColor: state.themeColor,
               brightness: Brightness.light,
             ),
+            appBarTheme: const AppBarTheme(
+              foregroundColor: Colors.white,
+              titleTextStyle: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+              iconTheme: IconThemeData(color: Colors.white),
+              actionsIconTheme: IconThemeData(color: Colors.white),
+            ),
             useMaterial3: true,
           ),
           localizationsDelegates: const [
