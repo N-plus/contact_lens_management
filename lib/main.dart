@@ -533,7 +533,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           clipBehavior: Clip.none,
                           children: [
                             Positioned(
-                              top: -48,
+                              top: -68,
                               left: 16,
                               child: Padding(
                                 padding: const EdgeInsets.only(top: 12),
