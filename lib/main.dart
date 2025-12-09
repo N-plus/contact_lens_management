@@ -533,99 +533,123 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Transform.translate(
-                      offset: const Offset(0, -50),
-                      child: SizedBox(
-                        width: chartSize,
-                        height: chartSize,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned(
-                              top: -68,
-                              left: 16,
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Text(
-                                  cycleLabel,
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: chartSize,
+                      height: chartSize + 68,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 16,
+                            right: 16,
+                            child: SizedBox(
+                              height: 52,
+                              child: Align(
+                                alignment: Alignment.topLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Text(
+                                    cycleLabel,
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                            CustomPaint(
-                              size: Size(chartSize, chartSize),
-                              painter: CircularProgressPainter(
-                                progress: state.progress,
-                                color: mainColor,
-                                backgroundColor: fadedColor,
+                          ),
+                          Positioned(
+                            top: 60,
+                            left: 0,
+                            right: 0,
+                            child: SizedBox(
+                              width: chartSize,
+                              height: chartSize,
+                              child: CustomPaint(
+                                size: Size(chartSize, chartSize),
+                                painter: CircularProgressPainter(
+                                  progress: state.progress,
+                                  color: mainColor,
+                                  backgroundColor: fadedColor,
+                                ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 28),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (isBeforeStart)
-                                    Text(
-                                      '使用開始前です',
-                                      style: TextStyle(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w700,
-                                        color: themeColor,
+                          ),
+                          Positioned(
+                            top: 60,
+                            left: 0,
+                            right: 0,
+                            child: SizedBox(
+                              width: chartSize,
+                              height: chartSize,
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 28),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (isBeforeStart)
+                                        Text(
+                                          '使用開始前です',
+                                          style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w700,
+                                            color: themeColor,
+                                          ),
+                                        )
+                                      else
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              '交換まで',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              isOverdue
+                                                  ? '$daysOverdue'
+                                                  : '$daysRemaining',
+                                              style: TextStyle(
+                                                fontSize: 56,
+                                                fontWeight: FontWeight.bold,
+                                                color: isOverdue
+                                                    ? Colors.red
+                                                    : themeColor,
+                                                height: 1,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '日',
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
                                       ),
-                                    )
-                                  else
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Text(
-                                          '交換まで',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          isOverdue
-                                              ? '$daysOverdue'
-                                              : '$daysRemaining',
-                                          style: TextStyle(
-                                            fontSize: 56,
-                                            fontWeight: FontWeight.bold,
-                                            color:
-                                                isOverdue ? Colors.red : themeColor,
-                                            height: 1,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '日',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 40),
