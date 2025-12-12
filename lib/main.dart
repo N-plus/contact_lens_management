@@ -567,13 +567,23 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: SizedBox(
                               width: chartSize,
                               height: chartSize,
-                              child: CustomPaint(
-                                size: Size(chartSize, chartSize),
-                                painter: CircularProgressPainter(
-                                  progress: state.progress,
-                                  color: mainColor,
-                                  backgroundColor: fadedColor,
+                              child: TweenAnimationBuilder<double>(
+                                tween: Tween<double>(
+                                  begin: 0,
+                                  end: state.progress,
                                 ),
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeInOut,
+                                builder: (context, animatedProgress, _) {
+                                  return CustomPaint(
+                                    size: Size(chartSize, chartSize),
+                                    painter: CircularProgressPainter(
+                                      progress: animatedProgress,
+                                      color: mainColor,
+                                      backgroundColor: fadedColor,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
