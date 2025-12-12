@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -470,6 +471,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late final AudioPlayer _audioPlayer;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer();
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
@@ -772,6 +787,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    await _playExchangeSound();
+
     final exchangePreview = selected.add(Duration(days: state.cycleLength));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -790,11 +807,18 @@ class _HomeScreenState extends State<HomeScreen> {
       await state.setInventoryCount(inventoryBefore - 1);
     }
     if (!mounted) return;
+    await _playExchangeSound();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('開始日を本日にリセットしました'),
         duration: Duration(seconds: 2),
       ),
+    );
+  }
+
+  Future<void> _playExchangeSound() async {
+    await _audioPlayer.play(
+      AssetSource('sounds/決定ボタンを押す53.mp3'),
     );
   }
 
