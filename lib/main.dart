@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
@@ -90,8 +91,200 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class ContactProfile {
+  ContactProfile({
+    required this.name,
+    required this.lensType,
+    required this.cycleLength,
+    required this.startDate,
+    required this.autoSchedule,
+    required this.notifyDayBefore,
+    required this.notifyDayBeforeTime,
+    required this.notifyDayOf,
+    required this.notifyDayOfTime,
+    required this.themeColorIndex,
+    required this.showInventory,
+    required this.inventoryCount,
+    required this.inventoryThreshold,
+    required this.soundEnabled,
+    required this.isRegistered,
+  });
+
+  factory ContactProfile.primaryDefaults() => ContactProfile(
+        name: 'コンタクト1',
+        lensType: 'コンタクト',
+        cycleLength: 14,
+        startDate: DateTime.now(),
+        autoSchedule: true,
+        notifyDayBefore: true,
+        notifyDayBeforeTime: const TimeOfDay(hour: 20, minute: 0),
+        notifyDayOf: true,
+        notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
+        themeColorIndex: 0,
+        showInventory: false,
+        inventoryCount: 0,
+        inventoryThreshold: 2,
+        soundEnabled: true,
+        isRegistered: true,
+      );
+
+  factory ContactProfile.secondaryPlaceholder() => ContactProfile(
+        name: 'コンタクト2',
+        lensType: 'コンタクト',
+        cycleLength: 14,
+        startDate: DateTime.now(),
+        autoSchedule: true,
+        notifyDayBefore: true,
+        notifyDayBeforeTime: const TimeOfDay(hour: 20, minute: 0),
+        notifyDayOf: true,
+        notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
+        themeColorIndex: 0,
+        showInventory: false,
+        inventoryCount: 0,
+        inventoryThreshold: 2,
+        soundEnabled: true,
+        isRegistered: false,
+      );
+
+  final String name;
+  final String lensType;
+  final int cycleLength;
+  final DateTime startDate;
+  final bool autoSchedule;
+  final bool notifyDayBefore;
+  final TimeOfDay notifyDayBeforeTime;
+  final bool notifyDayOf;
+  final TimeOfDay notifyDayOfTime;
+  final int themeColorIndex;
+  final bool showInventory;
+  final int inventoryCount;
+  final int inventoryThreshold;
+  final bool soundEnabled;
+  final bool isRegistered;
+
+  ContactProfile copyWith({
+    String? name,
+    String? lensType,
+    int? cycleLength,
+    DateTime? startDate,
+    bool? autoSchedule,
+    bool? notifyDayBefore,
+    TimeOfDay? notifyDayBeforeTime,
+    bool? notifyDayOf,
+    TimeOfDay? notifyDayOfTime,
+    int? themeColorIndex,
+    bool? showInventory,
+    int? inventoryCount,
+    int? inventoryThreshold,
+    bool? soundEnabled,
+    bool? isRegistered,
+  }) {
+    return ContactProfile(
+      name: name ?? this.name,
+      lensType: lensType ?? this.lensType,
+      cycleLength: cycleLength ?? this.cycleLength,
+      startDate: startDate ?? this.startDate,
+      autoSchedule: autoSchedule ?? this.autoSchedule,
+      notifyDayBefore: notifyDayBefore ?? this.notifyDayBefore,
+      notifyDayBeforeTime: notifyDayBeforeTime ?? this.notifyDayBeforeTime,
+      notifyDayOf: notifyDayOf ?? this.notifyDayOf,
+      notifyDayOfTime: notifyDayOfTime ?? this.notifyDayOfTime,
+      themeColorIndex: themeColorIndex ?? this.themeColorIndex,
+      showInventory: showInventory ?? this.showInventory,
+      inventoryCount: inventoryCount ?? this.inventoryCount,
+      inventoryThreshold: inventoryThreshold ?? this.inventoryThreshold,
+      soundEnabled: soundEnabled ?? this.soundEnabled,
+      isRegistered: isRegistered ?? this.isRegistered,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'lensType': lensType,
+      'cycleLength': cycleLength,
+      'startDate': startDate.millisecondsSinceEpoch,
+      'autoSchedule': autoSchedule,
+      'notifyDayBefore': notifyDayBefore,
+      'notifyDayBeforeTime': notifyDayBeforeTime.hour * 60 + notifyDayBeforeTime.minute,
+      'notifyDayOf': notifyDayOf,
+      'notifyDayOfTime': notifyDayOfTime.hour * 60 + notifyDayOfTime.minute,
+      'themeColorIndex': themeColorIndex,
+      'showInventory': showInventory,
+      'inventoryCount': inventoryCount,
+      'inventoryThreshold': inventoryThreshold,
+      'soundEnabled': soundEnabled,
+      'isRegistered': isRegistered,
+    };
+  }
+
+  factory ContactProfile.fromMap(Map<String, dynamic> map) {
+    final notifyBeforeMinutes = map['notifyDayBeforeTime'] as int?;
+    final notifyOfMinutes = map['notifyDayOfTime'] as int?;
+
+    return ContactProfile(
+      name: map['name'] as String? ?? 'コンタクト1',
+      lensType: map['lensType'] as String? ?? 'コンタクト',
+      cycleLength: map['cycleLength'] as int? ?? 14,
+      startDate: DateTime.fromMillisecondsSinceEpoch(
+        map['startDate'] as int? ?? DateTime.now().millisecondsSinceEpoch,
+      ),
+      autoSchedule: map['autoSchedule'] as bool? ?? true,
+      notifyDayBefore: map['notifyDayBefore'] as bool? ?? true,
+      notifyDayBeforeTime: _timeFromMinutes(
+        notifyBeforeMinutes,
+        const TimeOfDay(hour: 20, minute: 0),
+      ),
+      notifyDayOf: map['notifyDayOf'] as bool? ?? true,
+      notifyDayOfTime: _timeFromMinutes(
+        notifyOfMinutes,
+        const TimeOfDay(hour: 7, minute: 0),
+      ),
+      themeColorIndex: map['themeColorIndex'] as int? ?? 0,
+      showInventory: map['showInventory'] as bool? ?? false,
+      inventoryCount: map['inventoryCount'] as int? ?? 0,
+      inventoryThreshold: map['inventoryThreshold'] as int? ?? 2,
+      soundEnabled: map['soundEnabled'] as bool? ?? true,
+      isRegistered: map['isRegistered'] as bool? ?? true,
+    );
+  }
+
+  ContactProfile autoAdvanced(DateTime today) {
+    if (!autoSchedule) {
+      return this;
+    }
+
+    var start = _dateOnly(startDate);
+    var nextExchange = start.add(Duration(days: cycleLength));
+
+    while (!today.isBefore(nextExchange)) {
+      start = nextExchange;
+      nextExchange = start.add(Duration(days: cycleLength));
+    }
+
+    if (start != _dateOnly(startDate)) {
+      return copyWith(startDate: start);
+    }
+    return this;
+  }
+
+  static TimeOfDay _timeFromMinutes(int? minutes, TimeOfDay fallback) {
+    if (minutes == null) {
+      return fallback;
+    }
+    final hour = minutes ~/ 60;
+    final minute = minutes % 60;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
+}
+
 class ContactLensState extends ChangeNotifier {
   ContactLensState();
+
+  static const _profileKeyPrefix = 'contactProfile_';
+  static const _selectedProfileIndexKey = 'selectedProfileIndex';
 
   static const _cycleKey = 'cycleLength';
   static const _startDateKey = 'startDate';
@@ -106,6 +299,8 @@ class ContactLensState extends ChangeNotifier {
   static const _inventoryThresholdKey = 'inventoryThreshold';
   static const _soundEnabledKey = 'soundEnabled';
 
+  static const _lensTypeKey = 'lensType';
+  static const int oneDayCycle = 1;
   static const int twoWeekCycle = 14;
   static const int oneMonthCycle = 30;
 
@@ -122,74 +317,59 @@ class ContactLensState extends ChangeNotifier {
 
   SharedPreferences? _prefs;
 
-  int _cycleLength = twoWeekCycle;
-  DateTime _startDate = DateTime.now();
-  bool _autoSchedule = true;
-  bool _notifyDayBefore = true;
-  TimeOfDay _notifyDayBeforeTime = const TimeOfDay(hour: 20, minute: 0);
-  bool _notifyDayOf = true;
-  TimeOfDay _notifyDayOfTime = const TimeOfDay(hour: 7, minute: 0);
-  int _themeColorIndex = 0;
-  bool _showInventory = false;
-  int _inventoryCount = 0;
-  int _inventoryThreshold = 2;
-  bool _soundEnabled = true;
+  final List<ContactProfile> _profiles = [
+    ContactProfile.primaryDefaults(),
+    ContactProfile.secondaryPlaceholder(),
+  ];
+  int _selectedProfileIndex = 0;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
+    _selectedProfileIndex = _prefs?.getInt(_selectedProfileIndexKey) ?? 0;
 
-    final storedStart = _prefs?.getInt(_startDateKey);
-    if (storedStart != null) {
-      _startDate = DateTime.fromMillisecondsSinceEpoch(storedStart);
-    } else {
-      _startDate = DateTime.now();
-    }
+    final storedPrimary = await _loadProfile(0);
+    final storedSecondary = await _loadProfile(1);
 
-    _cycleLength = _prefs?.getInt(_cycleKey) ?? twoWeekCycle;
-    _autoSchedule = _prefs?.getBool(_autoScheduleKey) ?? true;
-    _notifyDayBefore = _prefs?.getBool(_notifyDayBeforeKey) ?? true;
-    _notifyDayBeforeTime = _loadTimeOfDay(
-      _prefs?.getInt(_notifyDayBeforeTimeKey),
-      const TimeOfDay(hour: 20, minute: 0),
-    );
-    _notifyDayOf = _prefs?.getBool(_notifyDayOfKey) ?? true;
-    _notifyDayOfTime = _loadTimeOfDay(
-      _prefs?.getInt(_notifyDayOfTimeKey),
-      const TimeOfDay(hour: 7, minute: 0),
-    );
-    final storedThemeIndex = _prefs?.getInt(_themeColorIndexKey) ?? 0;
-    if (storedThemeIndex < 0) {
-      _themeColorIndex = 0;
-    } else if (storedThemeIndex >= _availableThemeColors.length) {
-      _themeColorIndex = _availableThemeColors.length - 1;
-    } else {
-      _themeColorIndex = storedThemeIndex;
-    }
-    _showInventory = _prefs?.getBool(_showInventoryKey) ?? false;
-    _inventoryCount = _prefs?.getInt(_inventoryCountKey) ?? 0;
-    _inventoryThreshold = _prefs?.getInt(_inventoryThresholdKey) ?? 2;
-    _soundEnabled = _prefs?.getBool(_soundEnabledKey) ?? true;
+    _profiles[0] = storedPrimary ?? await _loadLegacyProfile();
+    _profiles[1] = storedSecondary ?? ContactProfile.secondaryPlaceholder();
 
-    _autoAdvanceIfNeeded();
+    _autoAdvanceAll();
     await _persist();
     await _rescheduleNotifications();
     notifyListeners();
   }
 
-  int get cycleLength => _cycleLength;
-  DateTime get startDate => _startDate;
-  DateTime get exchangeDate => _startDate.add(Duration(days: _cycleLength));
-  bool get autoSchedule => _autoSchedule;
-  bool get notifyDayBefore => _notifyDayBefore;
-  TimeOfDay get notifyDayBeforeTime => _notifyDayBeforeTime;
-  bool get notifyDayOf => _notifyDayOf;
-  TimeOfDay get notifyDayOfTime => _notifyDayOfTime;
-  Color get themeColor => _colorWithDefaultOpacity(_themeColorIndex);
-  int get themeColorIndex => _themeColorIndex;
-  bool get showInventory => _showInventory;
-  int get inventoryCount => _inventoryCount;
-  int get inventoryThreshold => _inventoryThreshold;
-  bool get soundEnabled => _soundEnabled;
+  ContactProfile get _profile => _profiles[_selectedProfileIndex];
+  int get selectedProfileIndex => _selectedProfileIndex;
+  bool get hasSecondProfile => _profiles[1].isRegistered;
+  String get currentProfileName => _profile.name;
+  String get currentLensType => _profile.lensType;
+  String profileName(int index) => _profiles[index].name;
+  String profileLensType(int index) => _profiles[index].lensType;
+
+  int get cycleLength => _profile.cycleLength;
+  DateTime get startDate => _profile.startDate;
+  DateTime get exchangeDate => _profile.startDate.add(Duration(days: _profile.cycleLength));
+  bool get autoSchedule => _profile.autoSchedule;
+  bool get notifyDayBefore => _profile.notifyDayBefore;
+  TimeOfDay get notifyDayBeforeTime => _profile.notifyDayBeforeTime;
+  bool get notifyDayOf => _profile.notifyDayOf;
+  TimeOfDay get notifyDayOfTime => _profile.notifyDayOfTime;
+  Color get themeColor => _colorWithDefaultOpacity(_profile.themeColorIndex);
+  int get themeColorIndex => _profile.themeColorIndex;
+  bool get showInventory => _profile.showInventory;
+  int get inventoryCount => _profile.inventoryCount;
+  int get inventoryThreshold => _profile.inventoryThreshold;
+  bool get soundEnabled => _profile.soundEnabled;
+  String get cycleLabel {
+    if (_profile.cycleLength == oneDayCycle) {
+      return '1day';
+    }
+    if (_profile.cycleLength == oneMonthCycle) {
+      return '1month';
+    }
+    return '${_profile.cycleLength == twoWeekCycle ? '2week' : _profile.cycleLength}';
+  }
 
   List<Color> get availableThemeColors => List.unmodifiable(_availableThemeColors);
   Color colorForIndex(int index) => _colorWithDefaultOpacity(index);
@@ -209,168 +389,219 @@ class ContactLensState extends ChangeNotifier {
   }
 
   double get progress {
-    final total = _cycleLength;
+    final total = _profile.cycleLength;
     if (total == 0) {
       return 0;
     }
     final today = _today();
-    final elapsed = today.difference(_dateOnly(_startDate)).inDays;
+    final elapsed = today.difference(_dateOnly(_profile.startDate)).inDays;
     final clamped = elapsed.clamp(0, total).toDouble();
     return clamped / total;
   }
 
   bool get shouldShowInventoryAlert =>
-      _showInventory && _inventoryCount <= _inventoryThreshold;
+      _profile.showInventory && _profile.inventoryCount <= _profile.inventoryThreshold;
 
   Future<void> recordExchangeToday() async {
-    _startDate = DateTime.now();
-    _autoAdvanceIfNeeded();
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile(
+      (current) => current.copyWith(startDate: DateTime.now()),
+    );
   }
 
   Future<void> recordExchangeOn(DateTime start) async {
-    _startDate = DateTime(start.year, start.month, start.day);
-    _autoAdvanceIfNeeded();
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile(
+      (current) => current.copyWith(startDate: DateTime(start.year, start.month, start.day)),
+    );
   }
 
   Future<void> setCycleLength(int days) async {
-    if (_cycleLength == days) return;
-    _cycleLength = days;
-    _autoAdvanceIfNeeded();
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(cycleLength: days));
   }
 
   Future<void> shiftStartDateByDays(int days) async {
-    final current = _dateOnly(_startDate);
-    _startDate = current.add(Duration(days: days));
-    _autoAdvanceIfNeeded();
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    final current = _dateOnly(_profile.startDate);
+    await _updateProfile(
+      (profile) => profile.copyWith(startDate: current.add(Duration(days: days))),
+    );
   }
 
   Future<void> setAutoSchedule(bool value) async {
-    _autoSchedule = value;
-    _autoAdvanceIfNeeded();
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(autoSchedule: value));
   }
 
   Future<void> setNotifyDayBefore(bool value) async {
-    _notifyDayBefore = value;
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(notifyDayBefore: value));
   }
 
   Future<void> setNotifyDayBeforeTime(TimeOfDay value) async {
-    _notifyDayBeforeTime = value;
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(notifyDayBeforeTime: value));
   }
 
   Future<void> setNotifyDayOf(bool value) async {
-    _notifyDayOf = value;
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(notifyDayOf: value));
   }
 
   Future<void> setNotifyDayOfTime(TimeOfDay value) async {
-    _notifyDayOfTime = value;
-    await _persist();
-    await _rescheduleNotifications();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(notifyDayOfTime: value));
   }
 
   Future<void> setThemeColorIndex(int index) async {
     if (index < 0 || index >= _availableThemeColors.length) return;
-    if (_themeColorIndex == index) return;
-    _themeColorIndex = index;
-    await _persist();
-    notifyListeners();
+    if (_profile.themeColorIndex == index) return;
+    await _updateProfile(
+      (current) => current.copyWith(themeColorIndex: index),
+      rescheduleNotifications: false,
+    );
   }
 
   Future<void> setShowInventory(bool value) async {
-    _showInventory = value;
-    await _persist();
-    notifyListeners();
+    await _updateProfile((current) => current.copyWith(showInventory: value));
   }
 
   Future<void> setInventoryCount(int value) async {
-    _inventoryCount = value < 0 ? 0 : value;
-    await _persist();
-    notifyListeners();
+    await _updateProfile(
+      (current) => current.copyWith(inventoryCount: value < 0 ? 0 : value),
+      rescheduleNotifications: false,
+    );
   }
 
   Future<void> setInventoryThreshold(int value) async {
-    _inventoryThreshold = value < 0 ? 0 : value;
-    await _persist();
-    notifyListeners();
+    await _updateProfile(
+      (current) => current.copyWith(inventoryThreshold: value < 0 ? 0 : value),
+      rescheduleNotifications: false,
+    );
   }
 
   Future<void> setSoundEnabled(bool value) async {
-    _soundEnabled = value;
+    await _updateProfile(
+      (current) => current.copyWith(soundEnabled: value),
+      rescheduleNotifications: false,
+    );
+  }
+
+  Future<void> setProfileName(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    await _updateProfile(
+      (current) => current.copyWith(name: trimmed),
+      rescheduleNotifications: false,
+    );
+  }
+
+  Future<void> setLensType(String lensType) async {
+    await _updateProfile(
+      (current) => current.copyWith(lensType: lensType.trim().isEmpty ? current.lensType : lensType.trim()),
+      rescheduleNotifications: false,
+    );
+  }
+
+  Future<void> switchProfile(int index) async {
+    if (index < 0 || index >= _profiles.length) return;
+    if (index == 1 && !_profiles[1].isRegistered) return;
+    if (_selectedProfileIndex == index) return;
+    _selectedProfileIndex = index;
     await _persist();
+    await _rescheduleNotifications();
     notifyListeners();
   }
 
-  TimeOfDay _loadTimeOfDay(int? stored, TimeOfDay fallback) {
+  Future<void> registerSecondProfile(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    _profiles[1] = ContactProfile.secondaryPlaceholder().copyWith(
+      name: trimmed,
+    );
+    _profiles[1] = _profiles[1].autoAdvanced(_today());
+    await _persist();
+    await _rescheduleNotifications();
+    notifyListeners();
+  }
+
+  Future<ContactProfile?> _loadProfile(int index) async {
+    final stored = _prefs?.getString('$_profileKeyPrefix$index');
     if (stored == null) {
-      return fallback;
+      return null;
     }
-    final hour = stored ~/ 60;
-    final minute = stored % 60;
-    return TimeOfDay(hour: hour, minute: minute);
+    try {
+      final decoded = jsonDecode(stored);
+      if (decoded is Map<String, dynamic>) {
+        return ContactProfile.fromMap(decoded);
+      }
+      return ContactProfile.fromMap(Map<String, dynamic>.from(decoded as Map));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<ContactProfile> _loadLegacyProfile() async {
+    final startMillis = _prefs?.getInt(_startDateKey);
+    final startDate = startMillis != null
+        ? DateTime.fromMillisecondsSinceEpoch(startMillis)
+        : DateTime.now();
+
+    final storedThemeIndex = _prefs?.getInt(_themeColorIndexKey) ?? 0;
+    int themeIndex;
+    if (storedThemeIndex < 0) {
+      themeIndex = 0;
+    } else if (storedThemeIndex >= _availableThemeColors.length) {
+      themeIndex = _availableThemeColors.length - 1;
+    } else {
+      themeIndex = storedThemeIndex;
+    }
+
+    return ContactProfile(
+      name: 'コンタクト1',
+      lensType: _prefs?.getString(_lensTypeKey) ?? 'コンタクト',
+      cycleLength: _prefs?.getInt(_cycleKey) ?? twoWeekCycle,
+      startDate: startDate,
+      autoSchedule: _prefs?.getBool(_autoScheduleKey) ?? true,
+      notifyDayBefore: _prefs?.getBool(_notifyDayBeforeKey) ?? true,
+      notifyDayBeforeTime: ContactProfile._timeFromMinutes(
+        _prefs?.getInt(_notifyDayBeforeTimeKey),
+        const TimeOfDay(hour: 20, minute: 0),
+      ),
+      notifyDayOf: _prefs?.getBool(_notifyDayOfKey) ?? true,
+      notifyDayOfTime: ContactProfile._timeFromMinutes(
+        _prefs?.getInt(_notifyDayOfTimeKey),
+        const TimeOfDay(hour: 7, minute: 0),
+      ),
+      themeColorIndex: themeIndex,
+      showInventory: _prefs?.getBool(_showInventoryKey) ?? false,
+      inventoryCount: _prefs?.getInt(_inventoryCountKey) ?? 0,
+      inventoryThreshold: _prefs?.getInt(_inventoryThresholdKey) ?? 2,
+      soundEnabled: _prefs?.getBool(_soundEnabledKey) ?? true,
+      isRegistered: true,
+    );
+  }
+
+  Future<void> _updateProfile(
+    ContactProfile Function(ContactProfile current) updater, {
+    bool rescheduleNotifications = true,
+  }) async {
+    _profiles[_selectedProfileIndex] =
+        updater(_profiles[_selectedProfileIndex]).autoAdvanced(_today());
+    await _persist();
+    if (rescheduleNotifications) {
+      await _rescheduleNotifications();
+    }
+    notifyListeners();
+  }
+
+  void _autoAdvanceAll() {
+    final today = _today();
+    for (var i = 0; i < _profiles.length; i++) {
+      _profiles[i] = _profiles[i].autoAdvanced(today);
+    }
   }
 
   Future<void> _persist() async {
-    await _prefs?.setInt(_startDateKey, _startDate.millisecondsSinceEpoch);
-    await _prefs?.setInt(_cycleKey, _cycleLength);
-    await _prefs?.setBool(_autoScheduleKey, _autoSchedule);
-    await _prefs?.setBool(_notifyDayBeforeKey, _notifyDayBefore);
-    await _prefs?.setInt(
-      _notifyDayBeforeTimeKey,
-      _notifyDayBeforeTime.hour * 60 + _notifyDayBeforeTime.minute,
-    );
-    await _prefs?.setBool(_notifyDayOfKey, _notifyDayOf);
-    await _prefs?.setInt(
-      _notifyDayOfTimeKey,
-      _notifyDayOfTime.hour * 60 + _notifyDayOfTime.minute,
-    );
-    await _prefs?.setInt(_themeColorIndexKey, _themeColorIndex);
-    await _prefs?.setBool(_showInventoryKey, _showInventory);
-    await _prefs?.setInt(_inventoryCountKey, _inventoryCount);
-    await _prefs?.setInt(_inventoryThresholdKey, _inventoryThreshold);
-    await _prefs?.setBool(_soundEnabledKey, _soundEnabled);
-  }
-
-  void _autoAdvanceIfNeeded() {
-    if (!_autoSchedule) {
-      return;
+    for (var i = 0; i < _profiles.length; i++) {
+      await _prefs?.setString(
+        '$_profileKeyPrefix$i',
+        jsonEncode(_profiles[i].toMap()),
+      );
     }
-
-    var start = _dateOnly(_startDate);
-    var nextExchange = start.add(Duration(days: _cycleLength));
-    final today = _today();
-
-    while (!today.isBefore(nextExchange)) {
-      start = nextExchange;
-      nextExchange = start.add(Duration(days: _cycleLength));
-    }
-
-    if (start != _dateOnly(_startDate)) {
-      _startDate = start;
-    }
+    await _prefs?.setInt(_selectedProfileIndexKey, _selectedProfileIndex);
   }
 
   DateTime _today() {
@@ -387,10 +618,10 @@ class ContactLensState extends ChangeNotifier {
     final exchange = exchangeDate;
     final now = tz.TZDateTime.now(tz.local);
 
-    if (_notifyDayBefore) {
+    if (_profile.notifyDayBefore) {
       final scheduled = _scheduledDateTime(
         exchange.subtract(const Duration(days: 1)),
-        _notifyDayBeforeTime,
+        _profile.notifyDayBeforeTime,
       );
       if (scheduled.isAfter(now)) {
         await _notificationsPlugin.zonedSchedule(
@@ -416,8 +647,8 @@ class ContactLensState extends ChangeNotifier {
       }
     }
 
-    if (_notifyDayOf) {
-      final scheduled = _scheduledDateTime(exchange, _notifyDayOfTime);
+    if (_profile.notifyDayOf) {
+      final scheduled = _scheduledDateTime(exchange, _profile.notifyDayOfTime);
       if (scheduled.isAfter(now)) {
         await _notificationsPlugin.zonedSchedule(
           _dayOfNotificationId,
@@ -498,9 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isOverdue = state.overdueDays > 0;
     final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
-    final cycleLabel = state.cycleLength == ContactLensState.oneMonthCycle
-        ? '1month'
-        : '2week';
+    final cycleLabel = state.cycleLabel;
     final daysRemaining = state.remainingDays;
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
@@ -510,6 +739,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final isBeforeStart = start.isAfter(today);
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
+    final hasSecondProfile = state.hasSecondProfile;
 
     return Scaffold(
       appBar: AppBar(
@@ -521,6 +751,23 @@ class _HomeScreenState extends State<HomeScreen> {
         top: false,
         child: Stack(
           children: [
+            Positioned(
+              top: 8,
+              left: 16,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 200),
+                opacity: hasSecondProfile ? 1 : 0,
+                child: hasSecondProfile
+                    ? ContactSwitcher(
+                        firstLabel: state.profileName(0),
+                        secondLabel: state.profileName(1),
+                        selectedIndex: state.selectedProfileIndex,
+                        color: themeColor,
+                        onSelected: (index) => state.switchProfile(index),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
             Positioned(
               top: 8,
               right: 16,
@@ -566,16 +813,39 @@ class _HomeScreenState extends State<HomeScreen> {
                             right: 16,
                             child: SizedBox(
                               height: 52,
-                              child: Align(
+                          child: Align(
                                 alignment: Alignment.topLeft,
                                 child: Padding(
                                   padding: const EdgeInsets.only(top: 12),
-                                  child: Text(
-                                    cycleLabel,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (hasSecondProfile) ...[
+                                        Text(
+                                          state.currentProfileName,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          state.currentLensType,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                      ],
+                                      Text(
+                                        cycleLabel,
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -831,6 +1101,87 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
+  }
+}
+
+class ContactSwitcher extends StatelessWidget {
+  const ContactSwitcher({
+    super.key,
+    required this.firstLabel,
+    required this.secondLabel,
+    required this.selectedIndex,
+    required this.color,
+    required this.onSelected,
+  });
+
+  final String firstLabel;
+  final String secondLabel;
+  final int selectedIndex;
+  final Color color;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildSegment(firstLabel, 0, true),
+          _buildSegment(secondLabel, 1, false),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSegment(String label, int index, bool isFirst) {
+    final isSelected = selectedIndex == index;
+    return InkWell(
+      onTap: () => onSelected(index),
+      borderRadius: BorderRadius.horizontal(
+        left: isFirst ? const Radius.circular(14) : Radius.zero,
+        right: isFirst ? Radius.zero : const Radius.circular(14),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.horizontal(
+            left: isFirst ? const Radius.circular(14) : Radius.zero,
+            right: isFirst ? Radius.zero : const Radius.circular(14),
+          ),
+          border: Border.all(color: color.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              size: 18,
+              color: isSelected ? color : Colors.grey[600],
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isSelected ? color : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -1230,9 +1581,14 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ContactLensState>(
       builder: (context, state, _) {
-        final cyclePeriod =
-            state.cycleLength == ContactLensState.oneMonthCycle ? '1month' : '2week';
+        final cyclePeriod = state.cycleLength == ContactLensState.oneDayCycle
+            ? '1day'
+            : state.cycleLength == ContactLensState.oneMonthCycle
+                ? '1month'
+                : '2week';
         final themeColor = state.themeColor;
+        const lensTypes = ['コンタクト', 'カラコン'];
+        final hasSecondProfile = state.hasSecondProfile;
 
         return Scaffold(
           appBar: AppBar(
@@ -1242,6 +1598,68 @@ class SettingsPage extends StatelessWidget {
           ),
           body: ListView(
             children: [
+              if (!hasSecondProfile)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _showSecondContactDialog(context, state),
+                    icon: const Icon(Icons.add),
+                    label: const Text(
+                      '2つ目のコンタクトを登録',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              _buildSectionHeader('コンタクト情報'),
+              ListTile(
+                title: const Text('コンタクト名'),
+                subtitle: Text(state.currentProfileName),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                onTap: () => _showNameEditDialog(context, state),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'レンズ種別',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final type in lensTypes)
+                          ChoiceChip(
+                            label: Text(type),
+                            selected: state.currentLensType == type,
+                            selectedColor: themeColor.withOpacity(0.15),
+                            onSelected: (_) => state.setLensType(type),
+                            labelStyle: TextStyle(
+                              color: state.currentLensType == type
+                                  ? themeColor
+                                  : Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 32),
               _buildSectionHeader('交換周期'),
               _buildRadioTile(
                 title: '2week（14日）',
@@ -1253,6 +1671,23 @@ class SettingsPage extends StatelessWidget {
                     state.setCycleLength(ContactLensState.twoWeekCycle);
                   } else if (value == '1month') {
                     state.setCycleLength(ContactLensState.oneMonthCycle);
+                  } else if (value == '1day') {
+                    state.setCycleLength(ContactLensState.oneDayCycle);
+                  }
+                },
+              ),
+              _buildRadioTile(
+                title: '1day（1日）',
+                value: '1day',
+                groupValue: cyclePeriod,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  if (value == '2week') {
+                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                  } else if (value == '1month') {
+                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                  } else if (value == '1day') {
+                    state.setCycleLength(ContactLensState.oneDayCycle);
                   }
                 },
               ),
@@ -1453,6 +1888,78 @@ class SettingsPage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _showNameEditDialog(
+    BuildContext context,
+    ContactLensState state,
+  ) async {
+    final controller = TextEditingController(text: state.currentProfileName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('コンタクト名を編集'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '名前を入力',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('保存'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      await state.setProfileName(result.trim());
+    }
+  }
+
+  Future<void> _showSecondContactDialog(
+    BuildContext context,
+    ContactLensState state,
+  ) async {
+    final controller = TextEditingController(text: state.profileName(1));
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('2つ目のコンタクトを登録'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: '例：右目 / 左目 / 仕事用など',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: const Text('登録'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      await state.registerSecondProfile(result.trim());
+    }
   }
 
   Future<void> _selectTime(
