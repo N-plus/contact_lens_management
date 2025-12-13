@@ -1352,7 +1352,7 @@ class SettingsPage extends StatelessWidget {
               const Divider(height: 32),
               _buildSectionHeader('効果音'),
               _buildSwitchTile(
-                title: '効果音（交換完了音）',
+                title: '効果音',
                 value: state.soundEnabled,
                 activeColor: themeColor,
                 onChanged: (value) {
