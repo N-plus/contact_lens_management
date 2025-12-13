@@ -1031,7 +1031,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () => _showExchangeModal(state),
+                        onPressed: () => _onExchangeButtonPressed(state),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: themeColor,
                           foregroundColor: Colors.white,
@@ -1121,6 +1121,26 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _onExchangeButtonPressed(ContactLensState state) async {
+    if (state.showInventory) {
+      final updated = await _showInventoryPicker(
+        context,
+        state,
+        isCurrentInventory: true,
+      );
+
+      if (!updated || !mounted) {
+        return;
+      }
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    _showExchangeModal(state);
   }
 
   Future<void> _recordExchangeOnSelectedDate(
@@ -2113,7 +2133,7 @@ class SettingsPage extends StatelessWidget {
     return '$y/$m/$d';
   }
 
-  Future<void> _showInventoryPicker(
+  Future<bool> _showInventoryPicker(
     BuildContext context,
     ContactLensState state, {
     required bool isCurrentInventory,
@@ -2123,6 +2143,7 @@ class SettingsPage extends StatelessWidget {
     final maxCount = maxValue is int ? maxValue : maxValue.toInt();
     final clampedInitial = initialValue.clamp(0, maxCount);
     int selectedValue = clampedInitial is int ? clampedInitial : clampedInitial.toInt();
+    var saved = false;
 
     await showModalBottomSheet<void>(
       context: context,
@@ -2155,6 +2176,7 @@ class SettingsPage extends StatelessWidget {
                         } else {
                           await state.setInventoryThreshold(selectedValue);
                         }
+                        saved = true;
                         if (sheetContext.mounted) {
                           Navigator.pop(sheetContext);
                         }
@@ -2189,6 +2211,8 @@ class SettingsPage extends StatelessWidget {
         );
       },
     );
+
+    return saved;
   }
 
   Widget _buildSectionHeader(String title) {
