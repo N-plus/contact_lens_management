@@ -1786,31 +1786,6 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
               const Divider(height: 32),
-              _buildSectionHeader('テーマカラー'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GridView.count(
-                      crossAxisCount: 5,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (var i = 0; i < state.availableThemeColors.length; i++)
-                          _buildColorOption(
-                            color: state.colorForIndex(i),
-                            isSelected: i == state.themeColorIndex,
-                            onTap: () => state.setThemeColorIndex(i),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 32),
               _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
                 title: '在庫数を表示',
@@ -1877,6 +1852,31 @@ class SettingsPage extends StatelessWidget {
                 onChanged: (value) {
                   state.setAutoSchedule(value);
                 },
+              ),
+              const Divider(height: 32),
+              _buildSectionHeader('テーマカラー'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GridView.count(
+                      crossAxisCount: 5,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        for (var i = 0; i < state.availableThemeColors.length; i++)
+                          _buildColorOption(
+                            color: state.colorForIndex(i),
+                            isSelected: i == state.themeColorIndex,
+                            onTap: () => state.setThemeColorIndex(i),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
             ],
