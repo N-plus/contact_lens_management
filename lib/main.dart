@@ -1124,7 +1124,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onExchangeButtonPressed(ContactLensState state) async {
-    if (state.showInventory) {
+    if (state.showInventory && state.inventoryCount <= 0) {
       final updated = await showInventoryPicker(
         context,
         state,
