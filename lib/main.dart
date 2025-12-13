@@ -114,7 +114,7 @@ class ContactLensState extends ChangeNotifier {
 
   static const List<Color> _availableThemeColors = <Color>[
     Color(0xFF5385C8),
-    Color(0xFF27AE60),
+    Color(0xE64DBE7D),
     Color(0xE6CC874B),
     Color(0xFF9B51E0),
     Color(0xFFEB5757),
