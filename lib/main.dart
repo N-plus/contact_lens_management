@@ -103,6 +103,7 @@ class ContactProfile {
     required this.notifyDayOf,
     required this.notifyDayOfTime,
     required this.themeColorIndex,
+    required this.inventoryAlertEnabled,
     required this.showInventory,
     required this.inventoryCount,
     required this.inventoryThreshold,
@@ -121,6 +122,7 @@ class ContactProfile {
         notifyDayOf: true,
         notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
         themeColorIndex: 0,
+        inventoryAlertEnabled: true,
         showInventory: false,
         inventoryCount: 0,
         inventoryThreshold: 2,
@@ -139,6 +141,7 @@ class ContactProfile {
         notifyDayOf: true,
         notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
         themeColorIndex: 0,
+        inventoryAlertEnabled: true,
         showInventory: false,
         inventoryCount: 0,
         inventoryThreshold: 2,
@@ -156,6 +159,7 @@ class ContactProfile {
   final bool notifyDayOf;
   final TimeOfDay notifyDayOfTime;
   final int themeColorIndex;
+  final bool inventoryAlertEnabled;
   final bool showInventory;
   final int inventoryCount;
   final int inventoryThreshold;
@@ -173,6 +177,7 @@ class ContactProfile {
     bool? notifyDayOf,
     TimeOfDay? notifyDayOfTime,
     int? themeColorIndex,
+    bool? inventoryAlertEnabled,
     bool? showInventory,
     int? inventoryCount,
     int? inventoryThreshold,
@@ -190,6 +195,7 @@ class ContactProfile {
       notifyDayOf: notifyDayOf ?? this.notifyDayOf,
       notifyDayOfTime: notifyDayOfTime ?? this.notifyDayOfTime,
       themeColorIndex: themeColorIndex ?? this.themeColorIndex,
+      inventoryAlertEnabled: inventoryAlertEnabled ?? this.inventoryAlertEnabled,
       showInventory: showInventory ?? this.showInventory,
       inventoryCount: inventoryCount ?? this.inventoryCount,
       inventoryThreshold: inventoryThreshold ?? this.inventoryThreshold,
@@ -210,6 +216,7 @@ class ContactProfile {
       'notifyDayOf': notifyDayOf,
       'notifyDayOfTime': notifyDayOfTime.hour * 60 + notifyDayOfTime.minute,
       'themeColorIndex': themeColorIndex,
+      'inventoryAlertEnabled': inventoryAlertEnabled,
       'showInventory': showInventory,
       'inventoryCount': inventoryCount,
       'inventoryThreshold': inventoryThreshold,
@@ -241,6 +248,7 @@ class ContactProfile {
         const TimeOfDay(hour: 7, minute: 0),
       ),
       themeColorIndex: map['themeColorIndex'] as int? ?? 0,
+      inventoryAlertEnabled: map['inventoryAlertEnabled'] as bool? ?? true,
       showInventory: map['showInventory'] as bool? ?? false,
       inventoryCount: map['inventoryCount'] as int? ?? 0,
       inventoryThreshold: map['inventoryThreshold'] as int? ?? 2,
@@ -294,6 +302,7 @@ class ContactLensState extends ChangeNotifier {
   static const _notifyDayOfKey = 'notifyDayOf';
   static const _notifyDayOfTimeKey = 'notifyDayOfTime';
   static const _themeColorIndexKey = 'themeColorIndex';
+  static const _inventoryAlertEnabledKey = 'inventoryAlertEnabled';
   static const _showInventoryKey = 'showInventory';
   static const _inventoryCountKey = 'inventoryCount';
   static const _inventoryThresholdKey = 'inventoryThreshold';
@@ -306,6 +315,8 @@ class ContactLensState extends ChangeNotifier {
 
   static const int _dayBeforeNotificationId = 1001;
   static const int _dayOfNotificationId = 1002;
+  static const int _inventoryAlertNotificationId = 1003;
+  static const TimeOfDay _inventoryAlertTime = TimeOfDay(hour: 8, minute: 30);
 
   static const List<Color> _availableThemeColors = <Color>[
     Color(0xFF5385C8),
@@ -363,6 +374,7 @@ class ContactLensState extends ChangeNotifier {
   TimeOfDay get notifyDayOfTime => _profile.notifyDayOfTime;
   Color get themeColor => _colorWithDefaultOpacity(_profile.themeColorIndex);
   int get themeColorIndex => _profile.themeColorIndex;
+  bool get notifyInventoryAlert => _profile.inventoryAlertEnabled;
   bool get showInventory => _profile.showInventory;
   int get inventoryCount => _profile.inventoryCount;
   int get inventoryThreshold => _profile.inventoryThreshold;
@@ -451,6 +463,12 @@ class ContactLensState extends ChangeNotifier {
     await _updateProfile((current) => current.copyWith(notifyDayOfTime: value));
   }
 
+  Future<void> setNotifyInventoryAlert(bool value) async {
+    await _updateProfile(
+      (current) => current.copyWith(inventoryAlertEnabled: value),
+    );
+  }
+
   Future<void> setThemeColorIndex(int index) async {
     if (index < 0 || index >= _availableThemeColors.length) return;
     if (_profile.themeColorIndex == index) return;
@@ -467,14 +485,12 @@ class ContactLensState extends ChangeNotifier {
   Future<void> setInventoryCount(int value) async {
     await _updateProfile(
       (current) => current.copyWith(inventoryCount: value < 0 ? 0 : value),
-      rescheduleNotifications: false,
     );
   }
 
   Future<void> setInventoryThreshold(int value) async {
     await _updateProfile(
       (current) => current.copyWith(inventoryThreshold: value < 0 ? 0 : value),
-      rescheduleNotifications: false,
     );
   }
 
@@ -580,6 +596,8 @@ class ContactLensState extends ChangeNotifier {
         const TimeOfDay(hour: 7, minute: 0),
       ),
       themeColorIndex: themeIndex,
+      inventoryAlertEnabled:
+          _prefs?.getBool(_inventoryAlertEnabledKey) ?? true,
       showInventory: _prefs?.getBool(_showInventoryKey) ?? false,
       inventoryCount: _prefs?.getInt(_inventoryCountKey) ?? 0,
       inventoryThreshold: _prefs?.getInt(_inventoryThresholdKey) ?? 2,
@@ -628,9 +646,42 @@ class ContactLensState extends ChangeNotifier {
   Future<void> _rescheduleNotifications() async {
     await _notificationsPlugin.cancel(_dayBeforeNotificationId);
     await _notificationsPlugin.cancel(_dayOfNotificationId);
+    await _notificationsPlugin.cancel(_inventoryAlertNotificationId);
 
     final exchange = exchangeDate;
     final now = tz.TZDateTime.now(tz.local);
+
+    if (_profile.inventoryAlertEnabled &&
+        _profile.showInventory &&
+        _profile.inventoryCount <= _profile.inventoryThreshold) {
+      final scheduled = _scheduledDateTime(
+        exchange.subtract(const Duration(days: 3)),
+        _inventoryAlertTime,
+      );
+
+      if (scheduled.isAfter(now)) {
+        await _notificationsPlugin.zonedSchedule(
+          _inventoryAlertNotificationId,
+          '在庫アラート',
+          '在庫がお知らせ基準以下です。交換まであと3日です',
+          scheduled,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'contact_lens_schedule',
+              'Contact Lens Schedule',
+              channelDescription: 'コンタクト交換のリマインダー通知',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          matchDateTimeComponents: DateTimeComponents.dateAndTime,
+        );
+      }
+    }
 
     if (_profile.notifyDayBefore) {
       final scheduled = _scheduledDateTime(
@@ -1775,6 +1826,15 @@ class SettingsPage extends StatelessWidget {
                   time: state.notifyDayOfTime,
                   onTap: () => _selectTime(context, state, isDayBefore: false),
                 ),
+              _buildSwitchTile(
+                title: '在庫アラート通知',
+                subtitle: 'お知らせ基準以下＆交換まで3日で通知 (8:30)',
+                value: state.notifyInventoryAlert,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  state.setNotifyInventoryAlert(value);
+                },
+              ),
               const Divider(height: 32),
               _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
