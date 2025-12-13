@@ -477,6 +477,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final AudioPlayer _audioPlayer;
 
+  static const Color overdueColor = Color(0xE5BB5858);
+
   @override
   void initState() {
     super.initState();
@@ -494,7 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
     final isOverdue = state.overdueDays > 0;
-    final Color mainColor = isOverdue ? Colors.red : themeColor;
+    final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
     final cycleLabel = state.cycleLength == ContactLensState.oneMonthCycle
         ? '1month'
@@ -649,7 +651,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 fontSize: 56,
                                                 fontWeight: FontWeight.bold,
                                                 color: isOverdue
-                                                    ? Colors.red
+                                                    ? overdueColor
                                                     : themeColor,
                                                 height: 1,
                                               ),
