@@ -117,7 +117,7 @@ class ContactLensState extends ChangeNotifier {
     Color(0xE64DBE7D),
     Color(0xE6CC874B),
     Color(0xE6825BA7),
-    Color(0xFFEB5757),
+    Color(0xFF934545),
   ];
 
   SharedPreferences? _prefs;
