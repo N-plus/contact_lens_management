@@ -1776,16 +1776,6 @@ class SettingsPage extends StatelessWidget {
                   onTap: () => _selectTime(context, state, isDayBefore: false),
                 ),
               const Divider(height: 32),
-              _buildSectionHeader('効果音'),
-              _buildSwitchTile(
-                title: '効果音',
-                value: state.soundEnabled,
-                activeColor: themeColor,
-                onChanged: (value) {
-                  state.setSoundEnabled(value);
-                },
-              ),
-              const Divider(height: 32),
               _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
                 title: '在庫数を表示',
@@ -1851,6 +1841,16 @@ class SettingsPage extends StatelessWidget {
                 activeColor: themeColor,
                 onChanged: (value) {
                   state.setAutoSchedule(value);
+                },
+              ),
+              const Divider(height: 32),
+              _buildSectionHeader('効果音'),
+              _buildSwitchTile(
+                title: '効果音',
+                value: state.soundEnabled,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  state.setSoundEnabled(value);
                 },
               ),
               const Divider(height: 32),
