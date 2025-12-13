@@ -101,7 +101,6 @@ class ContactLensState extends ChangeNotifier {
   static const _notifyDayOfKey = 'notifyDayOf';
   static const _notifyDayOfTimeKey = 'notifyDayOfTime';
   static const _themeColorIndexKey = 'themeColorIndex';
-  static const _themeOpacityKey = 'themeOpacity';
   static const _showInventoryKey = 'showInventory';
   static const _inventoryCountKey = 'inventoryCount';
   static const _inventoryThresholdKey = 'inventoryThreshold';
@@ -114,7 +113,7 @@ class ContactLensState extends ChangeNotifier {
   static const int _dayOfNotificationId = 1002;
 
   static const List<Color> _availableThemeColors = <Color>[
-    Color(0xFF2F80ED),
+    Color(0xFF5385C8),
     Color(0xFF27AE60),
     Color(0xFFF2994A),
     Color(0xFF9B51E0),
@@ -131,7 +130,6 @@ class ContactLensState extends ChangeNotifier {
   bool _notifyDayOf = true;
   TimeOfDay _notifyDayOfTime = const TimeOfDay(hour: 7, minute: 0);
   int _themeColorIndex = 0;
-  double _themeOpacity = 1.0;
   bool _showInventory = false;
   int _inventoryCount = 0;
   int _inventoryThreshold = 2;
@@ -167,9 +165,6 @@ class ContactLensState extends ChangeNotifier {
     } else {
       _themeColorIndex = storedThemeIndex;
     }
-    _themeOpacity = (_prefs?.getDouble(_themeOpacityKey) ?? 1.0)
-        .clamp(0.1, 1.0)
-        .toDouble();
     _showInventory = _prefs?.getBool(_showInventoryKey) ?? false;
     _inventoryCount = _prefs?.getInt(_inventoryCountKey) ?? 0;
     _inventoryThreshold = _prefs?.getInt(_inventoryThresholdKey) ?? 2;
@@ -189,16 +184,15 @@ class ContactLensState extends ChangeNotifier {
   TimeOfDay get notifyDayBeforeTime => _notifyDayBeforeTime;
   bool get notifyDayOf => _notifyDayOf;
   TimeOfDay get notifyDayOfTime => _notifyDayOfTime;
-  Color get themeColor =>
-      _availableThemeColors[_themeColorIndex].withOpacity(_themeOpacity);
+  Color get themeColor => _colorWithDefaultOpacity(_themeColorIndex);
   int get themeColorIndex => _themeColorIndex;
-  double get themeOpacity => _themeOpacity;
   bool get showInventory => _showInventory;
   int get inventoryCount => _inventoryCount;
   int get inventoryThreshold => _inventoryThreshold;
   bool get soundEnabled => _soundEnabled;
 
   List<Color> get availableThemeColors => List.unmodifiable(_availableThemeColors);
+  Color colorForIndex(int index) => _colorWithDefaultOpacity(index);
 
   int get remainingDays {
     final today = _today();
@@ -306,14 +300,6 @@ class ContactLensState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setThemeOpacity(double value) async {
-    final normalized = value.clamp(0.1, 1.0).toDouble();
-    if (_themeOpacity == normalized) return;
-    _themeOpacity = normalized;
-    await _persist();
-    notifyListeners();
-  }
-
   Future<void> setShowInventory(bool value) async {
     _showInventory = value;
     await _persist();
@@ -362,7 +348,6 @@ class ContactLensState extends ChangeNotifier {
       _notifyDayOfTime.hour * 60 + _notifyDayOfTime.minute,
     );
     await _prefs?.setInt(_themeColorIndexKey, _themeColorIndex);
-    await _prefs?.setDouble(_themeOpacityKey, _themeOpacity);
     await _prefs?.setBool(_showInventoryKey, _showInventory);
     await _prefs?.setInt(_inventoryCountKey, _inventoryCount);
     await _prefs?.setInt(_inventoryThresholdKey, _inventoryThreshold);
@@ -470,6 +455,14 @@ class ContactLensState extends ChangeNotifier {
       time.minute,
     );
     return scheduled;
+  }
+
+  Color _colorWithDefaultOpacity(int index) {
+    final baseColor = _availableThemeColors[index];
+    if (index == 0) {
+      return baseColor.withOpacity(0.9);
+    }
+    return baseColor;
   }
 }
 
@@ -1375,15 +1368,12 @@ class SettingsPage extends StatelessWidget {
                       children: [
                         for (var i = 0; i < state.availableThemeColors.length; i++)
                           _buildColorOption(
-                            color: state.availableThemeColors[i]
-                                .withOpacity(state.themeOpacity),
+                            color: state.colorForIndex(i),
                             isSelected: i == state.themeColorIndex,
                             onTap: () => state.setThemeColorIndex(i),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    _buildOpacitySlider(state),
                   ],
                 ),
               ),
@@ -1693,36 +1683,6 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOpacitySlider(ContactLensState state) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '不透明度',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            Text(
-              '${(state.themeOpacity * 100).round()}%',
-              style: const TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-        Slider(
-          min: 0.1,
-          max: 1.0,
-          divisions: 18,
-          value: state.themeOpacity,
-          activeColor: state.themeColor,
-          onChanged: (value) {
-            state.setThemeOpacity(value);
-          },
-        ),
-      ],
-    );
-  }
 }
 
 class _StartDateButton extends StatelessWidget {
