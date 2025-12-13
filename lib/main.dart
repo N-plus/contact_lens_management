@@ -333,6 +333,12 @@ class ContactLensState extends ChangeNotifier {
     _profiles[0] = storedPrimary ?? await _loadLegacyProfile();
     _profiles[1] = storedSecondary ?? ContactProfile.secondaryPlaceholder();
 
+    if (!_profiles[1].isRegistered) {
+      _selectedProfileIndex = 0;
+    }
+    _selectedProfileIndex =
+        _selectedProfileIndex.clamp(0, _profiles.length - 1).toInt();
+
     _autoAdvanceAll();
     await _persist();
     await _rescheduleNotifications();
@@ -505,11 +511,19 @@ class ContactLensState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> registerSecondProfile(String name) async {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
+  Future<void> registerSecondProfile({
+    required String primaryName,
+    required String secondaryName,
+  }) async {
+    final trimmedPrimary = primaryName.trim();
+    final trimmedSecondary = secondaryName.trim();
+    if (trimmedSecondary.isEmpty) return;
+    _profiles[0] = _profiles[0].copyWith(
+      name: trimmedPrimary.isEmpty ? _profiles[0].name : trimmedPrimary,
+    );
     _profiles[1] = ContactProfile.secondaryPlaceholder().copyWith(
-      name: trimmed,
+      name: trimmedSecondary,
+      isRegistered: true,
     );
     _profiles[1] = _profiles[1].autoAdvanced(_today());
     await _persist();
@@ -1930,18 +1944,33 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     ContactLensState state,
   ) async {
-    final controller = TextEditingController(text: state.profileName(1));
+    final primaryController = TextEditingController(text: state.profileName(0));
+    final secondaryController = TextEditingController(text: state.profileName(1));
 
-    final result = await showDialog<String>(
+    final result = await showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('2つ目のコンタクトを登録'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: '例：右目 / 左目 / 仕事用など',
-            ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: primaryController,
+                decoration: const InputDecoration(
+                  labelText: '1つ目の名前',
+                  hintText: '例：右目 / 日常用',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: secondaryController,
+                decoration: const InputDecoration(
+                  labelText: '2つ目の名前',
+                  hintText: '例：左目 / 仕事用',
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -1949,7 +1978,14 @@ class SettingsPage extends StatelessWidget {
               child: const Text('キャンセル'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              onPressed: () {
+                final primaryName = primaryController.text.trim();
+                final secondaryName = secondaryController.text.trim();
+                if (secondaryName.isEmpty) return;
+                Navigator.of(dialogContext).pop(
+                  {'primary': primaryName, 'secondary': secondaryName},
+                );
+              },
               child: const Text('登録'),
             ),
           ],
@@ -1957,8 +1993,11 @@ class SettingsPage extends StatelessWidget {
       },
     );
 
-    if (result != null && result.trim().isNotEmpty) {
-      await state.registerSecondProfile(result.trim());
+    if (result != null) {
+      await state.registerSecondProfile(
+        primaryName: result['primary'] ?? '',
+        secondaryName: result['secondary'] ?? '',
+      );
     }
   }
 
