@@ -1125,7 +1125,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onExchangeButtonPressed(ContactLensState state) async {
     if (state.showInventory) {
-      final updated = await _showInventoryPicker(
+      final updated = await showInventoryPicker(
         context,
         state,
         isCurrentInventory: true,
@@ -1908,7 +1908,7 @@ class SettingsPage extends StatelessWidget {
                       Icon(Icons.chevron_right, color: Colors.grey[400]),
                     ],
                   ),
-                  onTap: () => _showInventoryPicker(
+                  onTap: () => showInventoryPicker(
                     context,
                     state,
                     isCurrentInventory: true,
@@ -1931,7 +1931,7 @@ class SettingsPage extends StatelessWidget {
                       Icon(Icons.chevron_right, color: Colors.grey[400]),
                     ],
                   ),
-                  onTap: () => _showInventoryPicker(
+                  onTap: () => showInventoryPicker(
                     context,
                     state,
                     isCurrentInventory: false,
@@ -2133,88 +2133,6 @@ class SettingsPage extends StatelessWidget {
     return '$y/$m/$d';
   }
 
-  Future<bool> _showInventoryPicker(
-    BuildContext context,
-    ContactLensState state, {
-    required bool isCurrentInventory,
-  }) async {
-    final initialValue = isCurrentInventory ? state.inventoryCount : state.inventoryThreshold;
-    final maxValue = math.max(initialValue, 100);
-    final maxCount = maxValue is int ? maxValue : maxValue.toInt();
-    final clampedInitial = initialValue.clamp(0, maxCount);
-    int selectedValue = clampedInitial is int ? clampedInitial : clampedInitial.toInt();
-    var saved = false;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return Container(
-          height: 300,
-          padding: const EdgeInsets.only(top: 16),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(sheetContext),
-                      child: const Text('キャンセル'),
-                    ),
-                    Text(
-                      isCurrentInventory ? '現在の在庫' : 'お知らせ基準',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        if (isCurrentInventory) {
-                          await state.setInventoryCount(selectedValue);
-                        } else {
-                          await state.setInventoryThreshold(selectedValue);
-                        }
-                        saved = true;
-                        if (sheetContext.mounted) {
-                          Navigator.pop(sheetContext);
-                        }
-                      },
-                      child: const Text('完了'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  scrollController: FixedExtentScrollController(
-                    initialItem: selectedValue,
-                  ),
-                  onSelectedItemChanged: (index) {
-                    selectedValue = index;
-                  },
-                  children: List.generate(
-                    maxCount + 1,
-                    (index) => Center(
-                      child: Text(
-                        '$index 個',
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    return saved;
-  }
-
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -2352,4 +2270,87 @@ class _StartDateButton extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<bool> showInventoryPicker(
+  BuildContext context,
+  ContactLensState state, {
+  required bool isCurrentInventory,
+  int? initialValue,
+}) async {
+  final startingValue = initialValue ?? (isCurrentInventory ? state.inventoryCount : state.inventoryThreshold);
+  final maxValue = math.max(startingValue, 100);
+  final maxCount = maxValue is int ? maxValue : maxValue.toInt();
+  final clampedInitial = startingValue.clamp(0, maxCount);
+  int selectedValue = clampedInitial is int ? clampedInitial : clampedInitial.toInt();
+  var saved = false;
+
+  await showModalBottomSheet<void>(
+    context: context,
+    builder: (sheetContext) {
+      return Container(
+        height: 300,
+        padding: const EdgeInsets.only(top: 16),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(sheetContext),
+                    child: const Text('キャンセル'),
+                  ),
+                  Text(
+                    isCurrentInventory ? '現在の在庫' : 'お知らせ基準',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      if (isCurrentInventory) {
+                        await state.setInventoryCount(selectedValue);
+                      } else {
+                        await state.setInventoryThreshold(selectedValue);
+                      }
+                      saved = true;
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext);
+                      }
+                    },
+                    child: const Text('完了'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoPicker(
+                itemExtent: 40,
+                scrollController: FixedExtentScrollController(
+                  initialItem: selectedValue,
+                ),
+                onSelectedItemChanged: (index) {
+                  selectedValue = index;
+                },
+                children: List.generate(
+                  maxCount + 1,
+                  (index) => Center(
+                    child: Text(
+                      '$index 個',
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  return saved;
 }
