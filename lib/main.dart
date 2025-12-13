@@ -105,6 +105,7 @@ class ContactLensState extends ChangeNotifier {
   static const _showInventoryKey = 'showInventory';
   static const _inventoryCountKey = 'inventoryCount';
   static const _inventoryThresholdKey = 'inventoryThreshold';
+  static const _soundEnabledKey = 'soundEnabled';
 
   static const int twoWeekCycle = 14;
   static const int oneMonthCycle = 30;
@@ -134,6 +135,7 @@ class ContactLensState extends ChangeNotifier {
   bool _showInventory = false;
   int _inventoryCount = 0;
   int _inventoryThreshold = 2;
+  bool _soundEnabled = true;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -171,6 +173,7 @@ class ContactLensState extends ChangeNotifier {
     _showInventory = _prefs?.getBool(_showInventoryKey) ?? false;
     _inventoryCount = _prefs?.getInt(_inventoryCountKey) ?? 0;
     _inventoryThreshold = _prefs?.getInt(_inventoryThresholdKey) ?? 2;
+    _soundEnabled = _prefs?.getBool(_soundEnabledKey) ?? true;
 
     _autoAdvanceIfNeeded();
     await _persist();
@@ -193,6 +196,7 @@ class ContactLensState extends ChangeNotifier {
   bool get showInventory => _showInventory;
   int get inventoryCount => _inventoryCount;
   int get inventoryThreshold => _inventoryThreshold;
+  bool get soundEnabled => _soundEnabled;
 
   List<Color> get availableThemeColors => List.unmodifiable(_availableThemeColors);
 
@@ -328,6 +332,12 @@ class ContactLensState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setSoundEnabled(bool value) async {
+    _soundEnabled = value;
+    await _persist();
+    notifyListeners();
+  }
+
   TimeOfDay _loadTimeOfDay(int? stored, TimeOfDay fallback) {
     if (stored == null) {
       return fallback;
@@ -356,6 +366,7 @@ class ContactLensState extends ChangeNotifier {
     await _prefs?.setBool(_showInventoryKey, _showInventory);
     await _prefs?.setInt(_inventoryCountKey, _inventoryCount);
     await _prefs?.setInt(_inventoryThresholdKey, _inventoryThreshold);
+    await _prefs?.setBool(_soundEnabledKey, _soundEnabled);
   }
 
   void _autoAdvanceIfNeeded() {
@@ -787,7 +798,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    await _playExchangeSound();
+    await _playExchangeSound(state);
 
     final exchangePreview = selected.add(Duration(days: state.cycleLength));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -807,7 +818,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await state.setInventoryCount(inventoryBefore - 1);
     }
     if (!mounted) return;
-    await _playExchangeSound();
+    await _playExchangeSound(state);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('開始日を本日にリセットしました'),
@@ -816,7 +827,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _playExchangeSound() async {
+  Future<void> _playExchangeSound(ContactLensState state) async {
+    if (!state.soundEnabled) return;
     await _audioPlayer.play(
       AssetSource('sounds/決定ボタンを押す53.mp3'),
     );
@@ -1337,6 +1349,16 @@ class SettingsPage extends StatelessWidget {
                   time: state.notifyDayOfTime,
                   onTap: () => _selectTime(context, state, isDayBefore: false),
                 ),
+              const Divider(height: 32),
+              _buildSectionHeader('効果音'),
+              _buildSwitchTile(
+                title: '効果音（交換完了音）',
+                value: state.soundEnabled,
+                activeColor: themeColor,
+                onChanged: (value) {
+                  state.setSoundEnabled(value);
+                },
+              ),
               const Divider(height: 32),
               _buildSectionHeader('テーマカラー'),
               Padding(
