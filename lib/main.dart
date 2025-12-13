@@ -1388,7 +1388,7 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
               const Divider(height: 32),
-              _buildSectionHeader('在庫'),
+              _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
                 title: '在庫数を表示',
                 value: state.showInventory,
