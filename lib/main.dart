@@ -803,6 +803,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final start = DateTime(startDate.year, startDate.month, startDate.day);
     final isBeforeStart = start.isAfter(today);
+    final shouldShowExpiredWarning = !isBeforeStart && isOverdue;
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
 
@@ -947,6 +948,30 @@ class _HomeScreenState extends State<HomeScreen> {
                                             color: themeColor,
                                           ),
                                         )
+                                      else if (shouldShowExpiredWarning)
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: overdueColor,
+                                              size: 32,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Flexible(
+                                              child: Text(
+                                                '使用期限が過ぎています',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: overdueColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
                                       else
                                         Row(
                                           mainAxisAlignment: MainAxisAlignment.center,
@@ -984,13 +1009,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ],
                                         ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.grey,
+                                      if (!shouldShowExpiredWarning)
+                                        Text(
+                                          '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey,
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),
