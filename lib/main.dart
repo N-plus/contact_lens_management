@@ -1053,38 +1053,39 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         ),
                                       ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 56,
-                                child: ElevatedButton(
-                                  onPressed: () => _onExchangeButtonPressed(state),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: themeColor,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                  ),
-                                  child: const Text(
-                                    'レンズを交換する',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 32),
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: 56,
+                                  child: ElevatedButton(
+                                    onPressed: () => _onExchangeButtonPressed(state),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: themeColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 2,
+                                    ),
+                                    child: const Text(
+                                      'レンズを交換する',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 32),
                         if (state.shouldShowInventoryOnboarding) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 20),
                           InventoryOnboardingCard(
                             accentColor: themeColor,
                             onSetup: () => _startInventorySetup(state),
