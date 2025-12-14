@@ -1869,6 +1869,9 @@ class SettingsPage extends StatelessWidget {
         final themeColor = state.themeColor;
         const lensTypes = ['コンタクト', 'カラコン', '右', '左'];
         final hasSecondProfile = state.hasSecondProfile;
+        final secondaryProfileName = state.profileName(1);
+        final shouldShowContactInfo =
+            hasSecondProfile && secondaryProfileName.trim().isNotEmpty;
 
         return Scaffold(
           appBar: AppBar(
@@ -1878,45 +1881,47 @@ class SettingsPage extends StatelessWidget {
           ),
           body: ListView(
             children: [
-              _buildSectionHeader('コンタクト情報'),
-              ListTile(
-                title: const Text('コンタクト名'),
-                subtitle: Text(state.currentProfileName),
-                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                onTap: () => _showNameEditDialog(context, state),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'レンズ種別',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      children: [
-                        for (final type in lensTypes)
-                          ChoiceChip(
-                            label: Text(type),
-                            selected: state.currentLensType == type,
-                            selectedColor: themeColor.withOpacity(0.15),
-                            onSelected: (_) => state.setLensType(type),
-                            labelStyle: TextStyle(
-                              color: state.currentLensType == type
-                                  ? themeColor
-                                  : Colors.black87,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
+              if (shouldShowContactInfo) ...[
+                _buildSectionHeader('コンタクト情報'),
+                ListTile(
+                  title: const Text('コンタクト名'),
+                  subtitle: Text(state.currentProfileName),
+                  trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                  onTap: () => _showNameEditDialog(context, state),
                 ),
-              ),
-              const Divider(height: 32),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'レンズ種別',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final type in lensTypes)
+                            ChoiceChip(
+                              label: Text(type),
+                              selected: state.currentLensType == type,
+                              selectedColor: themeColor.withOpacity(0.15),
+                              onSelected: (_) => state.setLensType(type),
+                              labelStyle: TextStyle(
+                                color: state.currentLensType == type
+                                    ? themeColor
+                                    : Colors.black87,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 32),
+              ],
               _buildSectionHeader('交換周期'),
               _buildRadioTile(
                 title: '2week（14日）',
