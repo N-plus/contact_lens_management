@@ -1083,7 +1083,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   if (state.shouldShowInventoryAlert) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -1121,8 +1121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ] else ...[
-                    const SizedBox(height: 10),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 20),
+                    const SizedBox(height: 72),
                   ],
                 ],
               ),
