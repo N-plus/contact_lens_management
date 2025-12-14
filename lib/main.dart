@@ -1762,11 +1762,13 @@ class CircularProgressPainter extends CustomPainter {
     required this.progress,
     required this.color,
     required this.backgroundColor,
+    this.isOverdue = false,
   });
 
   final double progress;
   final Color color;
   final Color backgroundColor;
+  final bool isOverdue;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1782,8 +1784,10 @@ class CircularProgressPainter extends CustomPainter {
 
     canvas.drawCircle(center, radius - strokeWidth / 2, bgPaint);
 
+    final progressColor = isOverdue ? _HomeScreenState.overdueColor : color;
+
     final progressPaint = Paint()
-      ..color = color
+      ..color = progressColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -1804,7 +1808,8 @@ class CircularProgressPainter extends CustomPainter {
   bool shouldRepaint(CircularProgressPainter oldDelegate) {
     return oldDelegate.progress != progress ||
         oldDelegate.color != color ||
-        oldDelegate.backgroundColor != backgroundColor;
+        oldDelegate.backgroundColor != backgroundColor ||
+        oldDelegate.isOverdue != isOverdue;
   }
 }
 
