@@ -1865,29 +1865,6 @@ class SettingsPage extends StatelessWidget {
           ),
           body: ListView(
             children: [
-              if (!hasSecondProfile)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: themeColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () => _showSecondContactDialog(context, state),
-                    icon: const Icon(Icons.add),
-                    label: const Text(
-                      '2つ目のコンタクトを登録',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
               _buildSectionHeader('コンタクト情報'),
               ListTile(
                 title: const Text('コンタクト名'),
@@ -2145,6 +2122,29 @@ class SettingsPage extends StatelessWidget {
                   state.setAutoSchedule(value);
                 },
               ),
+              if (!hasSecondProfile)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _showSecondContactDialog(context, state),
+                    icon: const Icon(Icons.add),
+                    label: const Text(
+                      '2つ目のコンタクトを登録',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               const Divider(height: 32),
               _buildSectionHeader('効果音'),
               _buildSwitchTile(
