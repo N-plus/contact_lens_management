@@ -1085,7 +1085,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (state.shouldShowInventoryAlert) ...[
                     const SizedBox(height: 20),
                     Transform.translate(
-                      offset: const Offset(0, -16),
+                      offset: const Offset(0, -24),
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.symmetric(
