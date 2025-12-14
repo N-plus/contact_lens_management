@@ -897,7 +897,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return SingleChildScrollView(
                   controller: _scrollController,
                   physics: _allowScroll
-                      ? const BouncingScrollPhysics()
+                      ? const ClampingScrollPhysics()
                       : const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                   child: ConstrainedBox(
@@ -1160,18 +1160,26 @@ class _HomeScreenState extends State<HomeScreen> {
               top: 10,
               right: 14,
               child: SafeArea(
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.settings,
-                    color: Colors.black87,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2, right: 2),
+                  child: IconButton(
+                    iconSize: 40,
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 48, minHeight: 48),
+                    splashRadius: 26,
+                    icon: const Icon(
+                      Icons.settings,
+                      color: Colors.black87,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SettingsPage(),
+                        ),
+                      );
+                    },
                   ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const SettingsPage(),
-                      ),
-                    );
-                  },
                 ),
               ),
             ),
