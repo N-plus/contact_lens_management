@@ -1079,6 +1079,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                    ),
                   ),
                   if (state.shouldShowInventoryOnboarding) ...[
                     const SizedBox(height: 16),
