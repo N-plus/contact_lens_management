@@ -124,7 +124,7 @@ class ContactProfile {
         themeColorIndex: 0,
         inventoryAlertEnabled: true,
         showInventory: false,
-        inventoryCount: 0,
+        inventoryCount: null,
         inventoryThreshold: 2,
         soundEnabled: true,
         isRegistered: true,
@@ -143,7 +143,7 @@ class ContactProfile {
         themeColorIndex: 0,
         inventoryAlertEnabled: true,
         showInventory: false,
-        inventoryCount: 0,
+        inventoryCount: null,
         inventoryThreshold: 2,
         soundEnabled: true,
         isRegistered: false,
@@ -161,7 +161,7 @@ class ContactProfile {
   final int themeColorIndex;
   final bool inventoryAlertEnabled;
   final bool showInventory;
-  final int inventoryCount;
+  final int? inventoryCount;
   final int inventoryThreshold;
   final bool soundEnabled;
   final bool isRegistered;
@@ -250,7 +250,7 @@ class ContactProfile {
       themeColorIndex: map['themeColorIndex'] as int? ?? 0,
       inventoryAlertEnabled: map['inventoryAlertEnabled'] as bool? ?? true,
       showInventory: map['showInventory'] as bool? ?? false,
-      inventoryCount: map['inventoryCount'] as int? ?? 0,
+      inventoryCount: map['inventoryCount'] as int?,
       inventoryThreshold: map['inventoryThreshold'] as int? ?? 2,
       soundEnabled: map['soundEnabled'] as bool? ?? true,
       isRegistered: map['isRegistered'] as bool? ?? true,
@@ -306,6 +306,8 @@ class ContactLensState extends ChangeNotifier {
   static const _showInventoryKey = 'showInventory';
   static const _inventoryCountKey = 'inventoryCount';
   static const _inventoryThresholdKey = 'inventoryThreshold';
+  static const _inventoryOnboardingDismissedKey =
+      'inventoryOnboardingDismissed';
   static const _soundEnabledKey = 'soundEnabled';
 
   static const _lensTypeKey = 'lensType';
@@ -333,10 +335,13 @@ class ContactLensState extends ChangeNotifier {
     ContactProfile.secondaryPlaceholder(),
   ];
   int _selectedProfileIndex = 0;
+  bool _inventoryOnboardingDismissed = false;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
     _selectedProfileIndex = _prefs?.getInt(_selectedProfileIndexKey) ?? 0;
+    _inventoryOnboardingDismissed =
+        _prefs?.getBool(_inventoryOnboardingDismissedKey) ?? false;
 
     final storedPrimary = await _loadProfile(0);
     final storedSecondary = await _loadProfile(1);
@@ -376,8 +381,10 @@ class ContactLensState extends ChangeNotifier {
   int get themeColorIndex => _profile.themeColorIndex;
   bool get notifyInventoryAlert => _profile.inventoryAlertEnabled;
   bool get showInventory => _profile.showInventory;
-  int get inventoryCount => _profile.inventoryCount;
+  int? get inventoryCount => _profile.inventoryCount;
   int get inventoryThreshold => _profile.inventoryThreshold;
+  bool get inventoryOnboardingDismissed => _inventoryOnboardingDismissed;
+  bool get isInventoryConfigured => _profile.inventoryCount != null;
   bool get soundEnabled => _profile.soundEnabled;
   String get cycleLabel {
     if (_profile.cycleLength == oneDayCycle) {
@@ -417,8 +424,12 @@ class ContactLensState extends ChangeNotifier {
     return clamped / total;
   }
 
-  bool get shouldShowInventoryAlert =>
-      _profile.showInventory && _profile.inventoryCount <= _profile.inventoryThreshold;
+  bool get shouldShowInventoryAlert => _profile.showInventory &&
+      _profile.inventoryCount != null &&
+      _profile.inventoryCount! <= _profile.inventoryThreshold;
+
+  bool get shouldShowInventoryOnboarding =>
+      !_inventoryOnboardingDismissed && _profile.inventoryCount == null;
 
   Future<void> recordExchangeToday() async {
     await _updateProfile(
@@ -482,9 +493,14 @@ class ContactLensState extends ChangeNotifier {
     await _updateProfile((current) => current.copyWith(showInventory: value));
   }
 
-  Future<void> setInventoryCount(int value) async {
+  Future<void> setInventoryCount(int? value) async {
+    final sanitized = value == null
+        ? null
+        : value < 0
+            ? 0
+            : value;
     await _updateProfile(
-      (current) => current.copyWith(inventoryCount: value < 0 ? 0 : value),
+      (current) => current.copyWith(inventoryCount: sanitized),
     );
   }
 
@@ -492,6 +508,12 @@ class ContactLensState extends ChangeNotifier {
     await _updateProfile(
       (current) => current.copyWith(inventoryThreshold: value < 0 ? 0 : value),
     );
+  }
+
+  Future<void> dismissInventoryOnboarding() async {
+    _inventoryOnboardingDismissed = true;
+    await _prefs?.setBool(_inventoryOnboardingDismissedKey, true);
+    notifyListeners();
   }
 
   Future<void> setSoundEnabled(bool value) async {
@@ -599,7 +621,9 @@ class ContactLensState extends ChangeNotifier {
       inventoryAlertEnabled:
           _prefs?.getBool(_inventoryAlertEnabledKey) ?? true,
       showInventory: _prefs?.getBool(_showInventoryKey) ?? false,
-      inventoryCount: _prefs?.getInt(_inventoryCountKey) ?? 0,
+      inventoryCount: _prefs?.containsKey(_inventoryCountKey)
+          ? _prefs?.getInt(_inventoryCountKey)
+          : null,
       inventoryThreshold: _prefs?.getInt(_inventoryThresholdKey) ?? 2,
       soundEnabled: _prefs?.getBool(_soundEnabledKey) ?? true,
       isRegistered: true,
@@ -634,6 +658,10 @@ class ContactLensState extends ChangeNotifier {
       );
     }
     await _prefs?.setInt(_selectedProfileIndexKey, _selectedProfileIndex);
+    await _prefs?.setBool(
+      _inventoryOnboardingDismissedKey,
+      _inventoryOnboardingDismissed,
+    );
   }
 
   DateTime _today() {
@@ -653,7 +681,8 @@ class ContactLensState extends ChangeNotifier {
 
     if (_profile.inventoryAlertEnabled &&
         _profile.showInventory &&
-        _profile.inventoryCount <= _profile.inventoryThreshold) {
+        _profile.inventoryCount != null &&
+        _profile.inventoryCount! <= _profile.inventoryThreshold) {
       final scheduled = _scheduledDateTime(
         exchange.subtract(const Duration(days: 3)),
         _inventoryAlertTime,
@@ -806,6 +835,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShowExpiredWarning = !isBeforeStart && isOverdue;
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
+    final inventoryCount = state.inventoryCount;
 
     return Scaffold(
       appBar: AppBar(
@@ -1049,6 +1079,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
+                    if (state.shouldShowInventoryOnboarding) ...[
+                      const SizedBox(height: 16),
+                      InventoryOnboardingCard(
+                        accentColor: themeColor,
+                        onSetup: () => _startInventorySetup(state),
+                        onDismiss: () => state.dismissInventoryOnboarding(),
+                      ),
+                    ],
                     if (state.shouldShowInventoryAlert) ...[
                       const SizedBox(height: 20),
                       Container(
@@ -1075,7 +1113,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '在庫が残り ${state.inventoryCount} 個です。お早めにご用意ください',
+                                '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
@@ -1101,6 +1139,23 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _startInventorySetup(ContactLensState state) async {
+    final saved = await showInventoryPicker(
+      context,
+      state,
+      isCurrentInventory: true,
+    );
+
+    if (!saved) {
+      return;
+    }
+
+    if (!mounted) return;
+
+    await state.setShowInventory(true);
+    await state.dismissInventoryOnboarding();
+  }
+
   void _showExchangeModal(ContactLensState state) {
     showModalBottomSheet<void>(
       context: context,
@@ -1124,7 +1179,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _onExchangeButtonPressed(ContactLensState state) async {
-    if (state.showInventory && state.inventoryCount <= 0) {
+    if (state.showInventory && (state.inventoryCount == null || state.inventoryCount! <= 0)) {
       final updated = await showInventoryPicker(
         context,
         state,
@@ -1149,7 +1204,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ) async {
     final inventoryBefore = state.inventoryCount;
     await state.recordExchangeOn(selected);
-    if (inventoryBefore > 0) {
+    if (inventoryBefore != null && inventoryBefore > 0) {
       await state.setInventoryCount(inventoryBefore - 1);
     }
     if (!mounted) {
@@ -1172,7 +1227,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _recordExchangeToday(ContactLensState state) async {
     final inventoryBefore = state.inventoryCount;
     await state.recordExchangeToday();
-    if (inventoryBefore > 0) {
+    if (inventoryBefore != null && inventoryBefore > 0) {
       await state.setInventoryCount(inventoryBefore - 1);
     }
     if (!mounted) return;
@@ -1194,6 +1249,96 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
+  }
+}
+
+class InventoryOnboardingCard extends StatelessWidget {
+  const InventoryOnboardingCard({
+    super.key,
+    required this.onSetup,
+    required this.onDismiss,
+    required this.accentColor,
+  });
+
+  final VoidCallback onSetup;
+  final VoidCallback onDismiss;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'コンタクトの在庫管理',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[900],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '残り個数のアラートが使えます',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey[700],
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onSetup,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size.fromHeight(44),
+                  ),
+                  child: const Text(
+                    '在庫を設定する',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onDismiss,
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+              ),
+              child: const Text('今回はしない'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1898,7 +2043,9 @@ class SettingsPage extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        '${state.inventoryCount} 個',
+                        state.inventoryCount == null
+                            ? '未設定'
+                            : '${state.inventoryCount} 個',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[700],
@@ -2278,7 +2425,9 @@ Future<bool> showInventoryPicker(
   required bool isCurrentInventory,
   int? initialValue,
 }) async {
-  final startingValue = initialValue ?? (isCurrentInventory ? state.inventoryCount : state.inventoryThreshold);
+  final baseValue = initialValue ??
+      (isCurrentInventory ? state.inventoryCount ?? 0 : state.inventoryThreshold);
+  final startingValue = baseValue < 0 ? 0 : baseValue;
   final maxValue = math.max(startingValue, 100);
   final maxCount = maxValue is int ? maxValue : maxValue.toInt();
   final clampedInitial = startingValue.clamp(0, maxCount);
