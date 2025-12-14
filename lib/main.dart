@@ -860,6 +860,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
     final inventoryCount = state.inventoryCount;
+    final shouldShiftMainContent =
+        hasSecondProfile && state.shouldShowInventoryAlert;
+    final mainContentOffset =
+        shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
 
     return Scaffold(
       appBar: AppBar(
@@ -895,49 +899,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (hasSecondProfile) const SizedBox(height: 20),
                   Expanded(
                     child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          SizedBox(
-                            width: chartSize,
-                            height: chartSize + 68,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Positioned(
-                                  top: 0,
-                                  left: 16,
-                                  right: 16,
-                                  child: SizedBox(
-                                    height: 52,
-                                    child: Align(
-                                      alignment: Alignment.topLeft,
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(top: 12),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              cycleLabel,
-                                              style: const TextStyle(
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.bold,
+                      child: Transform.translate(
+                        offset: mainContentOffset,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: chartSize,
+                              height: chartSize + 68,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Positioned(
+                                    top: 0,
+                                    left: 16,
+                                    right: 16,
+                                    child: SizedBox(
+                                      height: 52,
+                                      child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(top: 12),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                cycleLabel,
+                                                style: const TextStyle(
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Positioned(
-                                  top: 60,
-                                  left: 0,
-                                  right: 0,
-                                  child: SizedBox(
-                                    width: chartSize,
-                                    height: chartSize,
-                                    child: TweenAnimationBuilder<double>(
+                                  Positioned(
+                                    top: 60,
+                                    left: 0,
+                                    right: 0,
+                                    child: SizedBox(
+                                      width: chartSize,
+                                      height: chartSize,
+                                      child: TweenAnimationBuilder<double>(
                                       tween: Tween<double>(
                                         begin: 0,
                                         end: state.progress,
