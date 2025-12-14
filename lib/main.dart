@@ -1680,7 +1680,7 @@ class SettingsPage extends StatelessWidget {
                 ? '1month'
                 : '2week';
         final themeColor = state.themeColor;
-        const lensTypes = ['コンタクト', 'カラコン'];
+        const lensTypes = ['コンタクト', 'カラコン', '右', '左'];
         final hasSecondProfile = state.hasSecondProfile;
 
         return Scaffold(
