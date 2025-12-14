@@ -91,6 +91,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+enum NotificationTimeType { dayBefore, dayOf, inventoryAlert }
+
 class ContactProfile {
   ContactProfile({
     required this.name,
@@ -104,6 +106,7 @@ class ContactProfile {
     required this.notifyDayOfTime,
     required this.themeColorIndex,
     required this.inventoryAlertEnabled,
+    required this.inventoryAlertTime,
     required this.showInventory,
     required this.inventoryCount,
     required this.inventoryThreshold,
@@ -123,6 +126,7 @@ class ContactProfile {
         notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
         themeColorIndex: 0,
         inventoryAlertEnabled: true,
+        inventoryAlertTime: const TimeOfDay(hour: 8, minute: 30),
         showInventory: false,
         inventoryCount: null,
         inventoryThreshold: 2,
@@ -142,6 +146,7 @@ class ContactProfile {
         notifyDayOfTime: const TimeOfDay(hour: 7, minute: 0),
         themeColorIndex: 0,
         inventoryAlertEnabled: true,
+        inventoryAlertTime: const TimeOfDay(hour: 8, minute: 30),
         showInventory: false,
         inventoryCount: null,
         inventoryThreshold: 2,
@@ -160,6 +165,7 @@ class ContactProfile {
   final TimeOfDay notifyDayOfTime;
   final int themeColorIndex;
   final bool inventoryAlertEnabled;
+  final TimeOfDay inventoryAlertTime;
   final bool showInventory;
   final int? inventoryCount;
   final int inventoryThreshold;
@@ -178,6 +184,7 @@ class ContactProfile {
     TimeOfDay? notifyDayOfTime,
     int? themeColorIndex,
     bool? inventoryAlertEnabled,
+    TimeOfDay? inventoryAlertTime,
     bool? showInventory,
     int? inventoryCount,
     int? inventoryThreshold,
@@ -196,6 +203,7 @@ class ContactProfile {
       notifyDayOfTime: notifyDayOfTime ?? this.notifyDayOfTime,
       themeColorIndex: themeColorIndex ?? this.themeColorIndex,
       inventoryAlertEnabled: inventoryAlertEnabled ?? this.inventoryAlertEnabled,
+      inventoryAlertTime: inventoryAlertTime ?? this.inventoryAlertTime,
       showInventory: showInventory ?? this.showInventory,
       inventoryCount: inventoryCount ?? this.inventoryCount,
       inventoryThreshold: inventoryThreshold ?? this.inventoryThreshold,
@@ -217,6 +225,8 @@ class ContactProfile {
       'notifyDayOfTime': notifyDayOfTime.hour * 60 + notifyDayOfTime.minute,
       'themeColorIndex': themeColorIndex,
       'inventoryAlertEnabled': inventoryAlertEnabled,
+      'inventoryAlertTime':
+          inventoryAlertTime.hour * 60 + inventoryAlertTime.minute,
       'showInventory': showInventory,
       'inventoryCount': inventoryCount,
       'inventoryThreshold': inventoryThreshold,
@@ -228,6 +238,7 @@ class ContactProfile {
   factory ContactProfile.fromMap(Map<String, dynamic> map) {
     final notifyBeforeMinutes = map['notifyDayBeforeTime'] as int?;
     final notifyOfMinutes = map['notifyDayOfTime'] as int?;
+    final inventoryAlertMinutes = map['inventoryAlertTime'] as int?;
 
     return ContactProfile(
       name: map['name'] as String? ?? 'コンタクト1',
@@ -249,6 +260,10 @@ class ContactProfile {
       ),
       themeColorIndex: map['themeColorIndex'] as int? ?? 0,
       inventoryAlertEnabled: map['inventoryAlertEnabled'] as bool? ?? true,
+      inventoryAlertTime: _timeFromMinutes(
+        inventoryAlertMinutes,
+        const TimeOfDay(hour: 8, minute: 30),
+      ),
       showInventory: map['showInventory'] as bool? ?? false,
       inventoryCount: map['inventoryCount'] as int?,
       inventoryThreshold: map['inventoryThreshold'] as int? ?? 2,
@@ -318,7 +333,8 @@ class ContactLensState extends ChangeNotifier {
   static const int _dayBeforeNotificationId = 1001;
   static const int _dayOfNotificationId = 1002;
   static const int _inventoryAlertNotificationId = 1003;
-  static const TimeOfDay _inventoryAlertTime = TimeOfDay(hour: 8, minute: 30);
+  static const TimeOfDay _defaultInventoryAlertTime =
+      TimeOfDay(hour: 8, minute: 30);
 
   static const List<Color> _availableThemeColors = <Color>[
     Color(0xFF5385C8),
@@ -380,6 +396,7 @@ class ContactLensState extends ChangeNotifier {
   Color get themeColor => _colorWithDefaultOpacity(_profile.themeColorIndex);
   int get themeColorIndex => _profile.themeColorIndex;
   bool get notifyInventoryAlert => _profile.inventoryAlertEnabled;
+  TimeOfDay get inventoryAlertTime => _profile.inventoryAlertTime;
   bool get showInventory => _profile.showInventory;
   int? get inventoryCount => _profile.inventoryCount;
   int get inventoryThreshold => _profile.inventoryThreshold;
@@ -477,6 +494,12 @@ class ContactLensState extends ChangeNotifier {
   Future<void> setNotifyInventoryAlert(bool value) async {
     await _updateProfile(
       (current) => current.copyWith(inventoryAlertEnabled: value),
+    );
+  }
+
+  Future<void> setInventoryAlertTime(TimeOfDay value) async {
+    await _updateProfile(
+      (current) => current.copyWith(inventoryAlertTime: value),
     );
   }
 
@@ -620,6 +643,7 @@ class ContactLensState extends ChangeNotifier {
       themeColorIndex: themeIndex,
       inventoryAlertEnabled:
           _prefs?.getBool(_inventoryAlertEnabledKey) ?? true,
+      inventoryAlertTime: _defaultInventoryAlertTime,
       showInventory: _prefs?.getBool(_showInventoryKey) ?? false,
       inventoryCount: (_prefs?.containsKey(_inventoryCountKey) ?? false)
           ? _prefs!.getInt(_inventoryCountKey)
@@ -685,7 +709,7 @@ class ContactLensState extends ChangeNotifier {
         _profile.inventoryCount! <= _profile.inventoryThreshold) {
       final scheduled = _scheduledDateTime(
         exchange.subtract(const Duration(days: 3)),
-        _inventoryAlertTime,
+        _profile.inventoryAlertTime,
       );
 
       if (scheduled.isAfter(now)) {
@@ -1999,7 +2023,11 @@ class SettingsPage extends StatelessWidget {
                   context: context,
                   title: '前日通知時刻',
                   time: state.notifyDayBeforeTime,
-                  onTap: () => _selectTime(context, state, isDayBefore: true),
+                  onTap: () => _selectTime(
+                    context,
+                    state,
+                    type: NotificationTimeType.dayBefore,
+                  ),
                 ),
               _buildSwitchTile(
                 title: '当日通知',
@@ -2015,17 +2043,33 @@ class SettingsPage extends StatelessWidget {
                   context: context,
                   title: '当日通知時刻',
                   time: state.notifyDayOfTime,
-                  onTap: () => _selectTime(context, state, isDayBefore: false),
+                  onTap: () => _selectTime(
+                    context,
+                    state,
+                    type: NotificationTimeType.dayOf,
+                  ),
                 ),
               _buildSwitchTile(
                 title: '在庫アラート通知',
-                subtitle: 'お知らせ基準以下＆交換まで3日で通知 (8:30)',
+                subtitle:
+                    'お知らせ基準以下＆交換まで3日で通知 (${_formatTime(state.inventoryAlertTime)})',
                 value: state.notifyInventoryAlert,
                 activeColor: themeColor,
                 onChanged: (value) {
                   state.setNotifyInventoryAlert(value);
                 },
               ),
+              if (state.notifyInventoryAlert)
+                _buildTimeTile(
+                  context: context,
+                  title: '在庫アラート通知時刻',
+                  time: state.inventoryAlertTime,
+                  onTap: () => _selectTime(
+                    context,
+                    state,
+                    type: NotificationTimeType.inventoryAlert,
+                  ),
+                ),
               const Divider(height: 32),
               _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
@@ -2239,9 +2283,20 @@ class SettingsPage extends StatelessWidget {
   Future<void> _selectTime(
     BuildContext context,
     ContactLensState state, {
-    required bool isDayBefore,
+    required NotificationTimeType type,
   }) async {
-    final initialTime = isDayBefore ? state.notifyDayBeforeTime : state.notifyDayOfTime;
+    late TimeOfDay initialTime;
+    switch (type) {
+      case NotificationTimeType.dayBefore:
+        initialTime = state.notifyDayBeforeTime;
+        break;
+      case NotificationTimeType.dayOf:
+        initialTime = state.notifyDayOfTime;
+        break;
+      case NotificationTimeType.inventoryAlert:
+        initialTime = state.inventoryAlertTime;
+        break;
+    }
 
     final picked = await showTimePicker(
       context: context,
@@ -2259,10 +2314,16 @@ class SettingsPage extends StatelessWidget {
     );
 
     if (picked != null) {
-      if (isDayBefore) {
-        await state.setNotifyDayBeforeTime(picked);
-      } else {
-        await state.setNotifyDayOfTime(picked);
+      switch (type) {
+        case NotificationTimeType.dayBefore:
+          await state.setNotifyDayBeforeTime(picked);
+          break;
+        case NotificationTimeType.dayOf:
+          await state.setNotifyDayOfTime(picked);
+          break;
+        case NotificationTimeType.inventoryAlert:
+          await state.setInventoryAlertTime(picked);
+          break;
       }
     }
   }
