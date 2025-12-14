@@ -825,6 +825,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final AudioPlayer _audioPlayer;
+  late final ScrollController _scrollController;
+  bool _allowScroll = false;
 
   static const Color overdueColor = Color(0xE5BB5858);
 
@@ -832,12 +834,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+    _scrollController = ScrollController();
   }
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _updateScrollability() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+
+      final shouldAllowScroll = _scrollController.position.maxScrollExtent > 0;
+      if (_allowScroll != shouldAllowScroll) {
+        setState(() {
+          _allowScroll = shouldAllowScroll;
+        });
+      }
+    });
   }
 
   @override
@@ -861,6 +880,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final hasSecondProfile = state.hasSecondProfile;
     final inventoryCount = state.inventoryCount;
 
+    _updateScrollability();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('コンタクト交換管理'),
@@ -874,6 +895,10 @@ class _HomeScreenState extends State<HomeScreen> {
             LayoutBuilder(
               builder: (context, constraints) {
                 return SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: _allowScroll
+                      ? const BouncingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
@@ -1132,23 +1157,21 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             Positioned(
-              top: 12,
-              right: 16,
+              top: 10,
+              right: 14,
               child: SafeArea(
-                child: Material(
-                  color: themeColor,
-                  shape: const CircleBorder(),
-                  elevation: 3,
-                  child: IconButton(
-                    icon: const Icon(Icons.settings, color: Colors.white),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SettingsPage(),
-                        ),
-                      );
-                    },
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.settings,
+                    color: Colors.black87,
                   ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const SettingsPage(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
