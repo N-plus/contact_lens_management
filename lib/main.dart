@@ -1084,11 +1084,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   horizontal: 16,
                                                   vertical: 14,
                                                 ),
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: 46,
-                                                      height: 46,
+                                            child: Row(
+                                              children: [
+                                                Container(
+                                                  width: 46,
+                                                  height: 46,
                                                       decoration: BoxDecoration(
                                                         shape: BoxShape.circle,
                                                         color: fadedColor,
@@ -1151,7 +1151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         color: fadedColor,
                                                       ),
                                                       child: Icon(
-                                                        Icons.cycle,
+                                                        Icons.autorenew,
                                                         size: 24,
                                                         color: themeColor,
                                                       ),
@@ -1470,8 +1470,103 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  String _notificationStatus(ContactLensState state) {
+    final status = <String>[];
+
+    if (state.notifyDayBefore) {
+      status.add('前日 ${_formatTime(state.notifyDayBeforeTime)}');
+    }
+    if (state.notifyDayOf) {
+      status.add('当日 ${_formatTime(state.notifyDayOfTime)}');
+    }
+
+    if (status.isEmpty) {
+      return '通知OFF';
+    }
+
+    return '通知ON（${status.join(' / ')}）';
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
+  }
+}
+
+class InventoryProgressIndicator extends StatelessWidget {
+  const InventoryProgressIndicator({
+    super.key,
+    required this.count,
+    required this.threshold,
+    required this.accentColor,
+  });
+
+  final int count;
+  final int threshold;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLow = count <= threshold;
+    final maxValue = math.max(threshold * 2, count);
+    final progress = maxValue == 0 ? 0.0 : count / maxValue;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: accentColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accentColor.withOpacity(0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.inventory_2_outlined,
+                color: accentColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '在庫残り $count 個',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              Text(
+                isLow ? '残りわずか' : 'OK',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isLow ? Colors.orange[700] : accentColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: accentColor.withOpacity(0.2),
+              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
