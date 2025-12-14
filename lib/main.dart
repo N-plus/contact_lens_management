@@ -1046,19 +1046,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                     ),
-                                    if (state.showInventory && inventoryCount != null)
-                                      Positioned(
-                                        bottom: 8,
-                                        left: 0,
-                                        right: 0,
-                                        child: Center(
-                                          child: InventoryProgressIndicator(
-                                            count: inventoryCount,
-                                            threshold: state.inventoryThreshold,
-                                            accentColor: themeColor,
-                                          ),
-                                        ),
-                                      ),
                                   ],
                                 ),
                               ),
@@ -1495,78 +1482,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _formatDate(DateTime date) {
     return formatJapaneseDateWithWeekday(date);
-  }
-}
-
-class InventoryProgressIndicator extends StatelessWidget {
-  const InventoryProgressIndicator({
-    super.key,
-    required this.count,
-    required this.threshold,
-    required this.accentColor,
-  });
-
-  final int count;
-  final int threshold;
-  final Color accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final isLow = count <= threshold;
-    final maxValue = math.max(threshold * 2, count);
-    final progress = maxValue == 0 ? 0.0 : count / maxValue;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.inventory_2_outlined,
-                color: accentColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '在庫残り $count 個',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-              Text(
-                isLow ? '残りわずか' : 'OK',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isLow ? Colors.orange[700] : accentColor,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0.0, 1.0),
-              minHeight: 8,
-              backgroundColor: accentColor.withOpacity(0.2),
-              valueColor: AlwaysStoppedAnimation<Color>(accentColor),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
