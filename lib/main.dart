@@ -621,8 +621,8 @@ class ContactLensState extends ChangeNotifier {
       inventoryAlertEnabled:
           _prefs?.getBool(_inventoryAlertEnabledKey) ?? true,
       showInventory: _prefs?.getBool(_showInventoryKey) ?? false,
-      inventoryCount: _prefs?.containsKey(_inventoryCountKey)
-          ? _prefs?.getInt(_inventoryCountKey)
+      inventoryCount: (_prefs?.containsKey(_inventoryCountKey) ?? false)
+          ? _prefs!.getInt(_inventoryCountKey)
           : null,
       inventoryThreshold: _prefs?.getInt(_inventoryThresholdKey) ?? 2,
       soundEnabled: _prefs?.getBool(_soundEnabledKey) ?? true,
