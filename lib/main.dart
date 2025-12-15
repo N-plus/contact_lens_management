@@ -592,16 +592,27 @@ class ContactLensState extends ChangeNotifier {
 
   Future<void> registerSecondProfile({
     required String primaryName,
+    required String primaryLensType,
     required String secondaryName,
+    required String secondaryLensType,
   }) async {
     final trimmedPrimary = primaryName.trim();
     final trimmedSecondary = secondaryName.trim();
-    if (trimmedSecondary.isEmpty) return;
+    final trimmedPrimaryLens = primaryLensType.trim();
+    final trimmedSecondaryLens = secondaryLensType.trim();
+
+    if (trimmedSecondary.isEmpty || trimmedSecondaryLens.isEmpty) return;
+    final secondaryDefaults = ContactProfile.secondaryPlaceholder();
     _profiles[0] = _profiles[0].copyWith(
       name: trimmedPrimary.isEmpty ? _profiles[0].name : trimmedPrimary,
+      lensType:
+          trimmedPrimaryLens.isEmpty ? _profiles[0].lensType : trimmedPrimaryLens,
     );
-    _profiles[1] = ContactProfile.secondaryPlaceholder().copyWith(
+    _profiles[1] = secondaryDefaults.copyWith(
       name: trimmedSecondary,
+      lensType: trimmedSecondaryLens.isEmpty
+          ? secondaryDefaults.lensType
+          : trimmedSecondaryLens,
       themeColorIndex: _secondProfileDefaultColorIndex,
       isRegistered: true,
     );
@@ -2289,61 +2300,117 @@ class SettingsPage extends StatelessWidget {
     BuildContext context,
     ContactLensState state,
   ) async {
-    final primaryController = TextEditingController(text: state.profileName(0));
-    final secondaryController = TextEditingController(text: state.profileName(1));
+    final step1 = await _showContactSetupStep(
+      context,
+      title: 'Step 1 / 2: 1つ目のコンタクト',
+      initialName: state.profileName(0),
+      initialLensType: state.profileLensType(0),
+    );
 
-    final result = await showDialog<Map<String, String>>(
+    if (step1 == null) return;
+
+    final step2 = await _showContactSetupStep(
+      context,
+      title: 'Step 2 / 2: 2つ目のコンタクト',
+      initialName: state.profileName(1),
+      initialLensType: state.profileLensType(1),
+      confirmLabel: '登録',
+    );
+
+    if (step2 == null) return;
+
+    await state.registerSecondProfile(
+      primaryName: step1['name'] ?? '',
+      primaryLensType: step1['lensType'] ?? '',
+      secondaryName: step2['name'] ?? '',
+      secondaryLensType: step2['lensType'] ?? '',
+    );
+  }
+
+  Future<Map<String, String>?> _showContactSetupStep(
+    BuildContext context, {
+    required String title,
+    required String initialName,
+    required String initialLensType,
+    String confirmLabel = '次へ',
+  }) {
+    const lensTypes = ['コンタクト', 'カラコン', '右', '左'];
+    final controller = TextEditingController(text: initialName);
+    var selectedLensType =
+        lensTypes.contains(initialLensType) ? initialLensType : lensTypes.first;
+
+    return showDialog<Map<String, String>>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('2つ目のコンタクトを登録'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: primaryController,
-                decoration: const InputDecoration(
-                  labelText: '1つ目の名前',
-                  hintText: '例：右目 / 日常用',
-                ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final themeColor = Theme.of(dialogContext).colorScheme.primary;
+            final isValid =
+                controller.text.trim().isNotEmpty && selectedLensType.isNotEmpty;
+            return AlertDialog(
+              title: Text(title),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      labelText: '名前',
+                      hintText: '例：右目 / 日常用',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'レンズ種別',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (final type in lensTypes)
+                        ChoiceChip(
+                          label: Text(type),
+                          selected: selectedLensType == type,
+                          selectedColor: themeColor.withOpacity(0.15),
+                          onSelected: (_) => setState(() {
+                            selectedLensType = type;
+                          }),
+                          labelStyle: TextStyle(
+                            color: selectedLensType == type
+                                ? themeColor
+                                : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: secondaryController,
-                decoration: const InputDecoration(
-                  labelText: '2つ目の名前',
-                  hintText: '例：左目 / 仕事用',
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('キャンセル'),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('キャンセル'),
-            ),
-            TextButton(
-              onPressed: () {
-                final primaryName = primaryController.text.trim();
-                final secondaryName = secondaryController.text.trim();
-                if (secondaryName.isEmpty) return;
-                Navigator.of(dialogContext).pop(
-                  {'primary': primaryName, 'secondary': secondaryName},
-                );
-              },
-              child: const Text('登録'),
-            ),
-          ],
+                FilledButton(
+                  onPressed: isValid
+                      ? () {
+                          Navigator.of(dialogContext).pop({
+                            'name': controller.text.trim(),
+                            'lensType': selectedLensType,
+                          });
+                        }
+                      : null,
+                  child: Text(confirmLabel),
+                ),
+              ],
+            );
+          },
         );
       },
     );
-
-    if (result != null) {
-      await state.registerSecondProfile(
-        primaryName: result['primary'] ?? '',
-        secondaryName: result['secondary'] ?? '',
-      );
-    }
   }
 
   Future<void> _selectTime(
