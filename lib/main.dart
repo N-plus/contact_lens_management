@@ -880,7 +880,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
     final showSecondProfile = state.showSecondProfile;
-    final canShowSecondProfile = hasSecondProfile && showSecondProfile;
+    final secondVisible = hasSecondProfile && showSecondProfile;
+    final canShowSecondProfile = secondVisible;
     final inventoryCount = state.inventoryCount;
     final shouldShiftMainContent =
         canShowSecondProfile && state.shouldShowInventoryAlert;
@@ -1116,6 +1117,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                         if (state.shouldShowInventoryAlert) ...[
                           const SizedBox(height: 20),
+                          if (!secondVisible) const Spacer(),
                           Transform.translate(
                             offset: const Offset(0, -50),
                             child: Container(
