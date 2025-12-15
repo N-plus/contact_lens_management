@@ -887,6 +887,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShiftMainContent = secondVisible && shouldShowInventoryAlert;
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
+    final double alertTopGap = secondVisible ? 20 : 12;
 
     return Scaffold(
       appBar: AppBar(
@@ -905,9 +906,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Column(
-                      mainAxisAlignment: (!secondVisible && shouldShowInventoryAlert)
-                          ? MainAxisAlignment.spaceBetween
-                          : MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Column(
@@ -1123,57 +1121,54 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ],
                     ),
-                        if (shouldShowInventoryAlert) ...[
-                          Padding(
-                            padding: const EdgeInsets.only(top: 20),
-                            child: Transform.translate(
-                              offset:
-                                  secondVisible ? const Offset(0, -50) : Offset.zero,
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange[50],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.orange[300]!,
-                                    width: 1.5,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Colors.orange[700],
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.orange[900],
-                                          height: 1.4,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                    if (shouldShowInventoryAlert) ...[
+                      SizedBox(height: alertTopGap),
+                      Transform.translate(
+                        offset:
+                            secondVisible ? const Offset(0, -50) : Offset.zero,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.orange[300]!,
+                              width: 1.5,
                             ),
                           ),
-                        ] else ...[
-                          const SizedBox(height: 20),
-                          const SizedBox(height: 72),
-                        ],
-                      ],
-                    ),
-                  ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange[700],
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.orange[900],
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 20),
+                      const SizedBox(height: 72),
+                    ],
+                  ],
+                ),
                 );
               },
             ),
