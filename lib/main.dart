@@ -335,6 +335,7 @@ class ContactLensState extends ChangeNotifier {
   static const int _inventoryAlertNotificationId = 1003;
   static const TimeOfDay _defaultInventoryAlertTime =
       TimeOfDay(hour: 8, minute: 30);
+  static const int _secondProfileDefaultColorIndex = 1;
 
   static const List<Color> _availableThemeColors = <Color>[
     Color(0xFF5385C8),
@@ -584,6 +585,7 @@ class ContactLensState extends ChangeNotifier {
     );
     _profiles[1] = ContactProfile.secondaryPlaceholder().copyWith(
       name: trimmedSecondary,
+      themeColorIndex: _secondProfileDefaultColorIndex,
       isRegistered: true,
     );
     _profiles[1] = _profiles[1].autoAdvanced(_today());
