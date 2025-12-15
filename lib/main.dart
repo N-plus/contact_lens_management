@@ -2182,6 +2182,7 @@ class SettingsPage extends StatelessWidget {
                   state.setAutoSchedule(value);
                 },
               ),
+              const Divider(height: 32),
               if (!hasSecondProfile)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
