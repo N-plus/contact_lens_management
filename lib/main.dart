@@ -2193,8 +2193,8 @@ class SettingsPage extends StatelessWidget {
                   state.setAutoSchedule(value);
                 },
               ),
-              const Divider(height: 32),
-              if (!hasSecondProfile)
+              if (!hasSecondProfile) ...[
+                const Divider(height: 32),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: ElevatedButton.icon(
@@ -2217,7 +2217,9 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-              const Divider(height: 32),
+                const Divider(height: 32),
+              ] else
+                const Divider(height: 32),
               _buildSectionHeader('効果音'),
               _buildSwitchTile(
                 title: '効果音',
