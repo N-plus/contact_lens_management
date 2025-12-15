@@ -324,6 +324,7 @@ class ContactLensState extends ChangeNotifier {
   static const _inventoryOnboardingDismissedKey =
       'inventoryOnboardingDismissed';
   static const _soundEnabledKey = 'soundEnabled';
+  static const _showSecondProfileKey = 'showSecondProfile';
 
   static const _lensTypeKey = 'lensType';
   static const int oneDayCycle = 1;
@@ -353,12 +354,14 @@ class ContactLensState extends ChangeNotifier {
   ];
   int _selectedProfileIndex = 0;
   bool _inventoryOnboardingDismissed = false;
+  bool _showSecondProfile = true;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
     _selectedProfileIndex = _prefs?.getInt(_selectedProfileIndexKey) ?? 0;
     _inventoryOnboardingDismissed =
         _prefs?.getBool(_inventoryOnboardingDismissedKey) ?? false;
+    _showSecondProfile = _prefs?.getBool(_showSecondProfileKey) ?? true;
 
     final storedPrimary = await _loadProfile(0);
     final storedSecondary = await _loadProfile(1);
@@ -367,6 +370,8 @@ class ContactLensState extends ChangeNotifier {
     _profiles[1] = storedSecondary ?? ContactProfile.secondaryPlaceholder();
 
     if (!_profiles[1].isRegistered) {
+      _selectedProfileIndex = 0;
+    } else if (!_showSecondProfile) {
       _selectedProfileIndex = 0;
     }
     _selectedProfileIndex =
@@ -381,6 +386,7 @@ class ContactLensState extends ChangeNotifier {
   ContactProfile get _profile => _profiles[_selectedProfileIndex];
   int get selectedProfileIndex => _selectedProfileIndex;
   bool get hasSecondProfile => _profiles[1].isRegistered;
+  bool get showSecondProfile => _showSecondProfile;
   String get currentProfileName => _profile.name;
   String get currentLensType => _profile.lensType;
   String profileName(int index) => _profiles[index].name;
@@ -547,6 +553,17 @@ class ContactLensState extends ChangeNotifier {
     );
   }
 
+  Future<void> setShowSecondProfile(bool value) async {
+    if (_showSecondProfile == value) return;
+    _showSecondProfile = value;
+    if (!_showSecondProfile && _selectedProfileIndex == 1) {
+      _selectedProfileIndex = 0;
+      await _rescheduleNotifications();
+    }
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> setProfileName(String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
@@ -688,6 +705,7 @@ class ContactLensState extends ChangeNotifier {
       _inventoryOnboardingDismissedKey,
       _inventoryOnboardingDismissed,
     );
+    await _prefs?.setBool(_showSecondProfileKey, _showSecondProfile);
   }
 
   DateTime _today() {
@@ -861,9 +879,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShowExpiredWarning = !isBeforeStart && isOverdue;
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
+    final showSecondProfile = state.showSecondProfile;
+    final canShowSecondProfile = hasSecondProfile && showSecondProfile;
     final inventoryCount = state.inventoryCount;
     final shouldShiftMainContent =
-        hasSecondProfile && state.shouldShowInventoryAlert;
+        canShowSecondProfile && state.shouldShowInventoryAlert;
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
 
@@ -888,8 +908,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         AnimatedOpacity(
                           duration: const Duration(milliseconds: 200),
-                          opacity: hasSecondProfile ? 1 : 0,
-                          child: hasSecondProfile
+                          opacity: canShowSecondProfile ? 1 : 0,
+                          child: canShowSecondProfile
                               ? Align(
                                   alignment: Alignment.centerLeft,
                                   child: ContactSwitcher(
@@ -902,7 +922,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 )
                               : const SizedBox.shrink(),
                         ),
-                        if (hasSecondProfile) const SizedBox(height: 20),
+                        if (canShowSecondProfile) const SizedBox(height: 20),
                         Center(
                           child: Transform.translate(
                             offset: mainContentOffset,
@@ -1871,9 +1891,11 @@ class SettingsPage extends StatelessWidget {
         final themeColor = state.themeColor;
         const lensTypes = ['コンタクト', 'カラコン', '右', '左'];
         final hasSecondProfile = state.hasSecondProfile;
+        final showSecondProfile = state.showSecondProfile;
+        final canShowSecondProfile = hasSecondProfile && showSecondProfile;
         final secondaryProfileName = state.profileName(1);
         final shouldShowContactInfo =
-            hasSecondProfile && secondaryProfileName.trim().isNotEmpty;
+            canShowSecondProfile && secondaryProfileName.trim().isNotEmpty;
 
         return Scaffold(
           appBar: AppBar(
@@ -1883,45 +1905,55 @@ class SettingsPage extends StatelessWidget {
           ),
           body: ListView(
             children: [
-              if (shouldShowContactInfo) ...[
+              if (hasSecondProfile) ...[
                 _buildSectionHeader('コンタクト情報'),
-                ListTile(
-                  title: const Text('コンタクト名'),
-                  subtitle: Text(state.currentProfileName),
-                  trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                  onTap: () => _showNameEditDialog(context, state),
+                _buildSwitchTile(
+                  title: '2つ目のコンタクトを表示',
+                  value: showSecondProfile,
+                  activeColor: themeColor,
+                  onChanged: (value) {
+                    state.setShowSecondProfile(value);
+                  },
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'レンズ種別',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final type in lensTypes)
-                            ChoiceChip(
-                              label: Text(type),
-                              selected: state.currentLensType == type,
-                              selectedColor: themeColor.withOpacity(0.15),
-                              onSelected: (_) => state.setLensType(type),
-                              labelStyle: TextStyle(
-                                color: state.currentLensType == type
-                                    ? themeColor
-                                    : Colors.black87,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
+                if (shouldShowContactInfo) ...[
+                  ListTile(
+                    title: const Text('コンタクト名'),
+                    subtitle: Text(state.currentProfileName),
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _showNameEditDialog(context, state),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'レンズ種別',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final type in lensTypes)
+                              ChoiceChip(
+                                label: Text(type),
+                                selected: state.currentLensType == type,
+                                selectedColor: themeColor.withOpacity(0.15),
+                                onSelected: (_) => state.setLensType(type),
+                                labelStyle: TextStyle(
+                                  color: state.currentLensType == type
+                                      ? themeColor
+                                      : Colors.black87,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const Divider(height: 32),
               ],
               _buildSectionHeader('交換周期'),
