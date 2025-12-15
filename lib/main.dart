@@ -882,9 +882,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final showSecondProfile = state.showSecondProfile;
     final secondVisible = hasSecondProfile && showSecondProfile;
     final canShowSecondProfile = secondVisible;
+    final shouldShowInventoryAlert = state.shouldShowInventoryAlert;
     final inventoryCount = state.inventoryCount;
-    final shouldShiftMainContent =
-        canShowSecondProfile && state.shouldShowInventoryAlert;
+    final shouldShiftMainContent = secondVisible && shouldShowInventoryAlert;
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
 
@@ -905,41 +905,47 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Column(
+                      mainAxisAlignment: (!secondVisible && shouldShowInventoryAlert)
+                          ? MainAxisAlignment.spaceBetween
+                          : MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: canShowSecondProfile ? 1 : 0,
-                          child: canShowSecondProfile
-                              ? Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: ContactSwitcher(
-                                    firstLabel: state.profileName(0),
-                                    secondLabel: state.profileName(1),
-                                    selectedIndex: state.selectedProfileIndex,
-                                    color: themeColor,
-                                    onSelected: (index) => state.switchProfile(index),
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                        ),
-                        if (canShowSecondProfile) const SizedBox(height: 20),
-                        Center(
-                          child: Transform.translate(
-                            offset: mainContentOffset,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: chartSize,
-                                  height: chartSize + 68,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Positioned(
-                                        top: 0,
-                                        left: 16,
-                                        right: 16,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 200),
+                              opacity: canShowSecondProfile ? 1 : 0,
+                              child: canShowSecondProfile
+                                  ? Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: ContactSwitcher(
+                                        firstLabel: state.profileName(0),
+                                        secondLabel: state.profileName(1),
+                                        selectedIndex: state.selectedProfileIndex,
+                                        color: themeColor,
+                                        onSelected: (index) => state.switchProfile(index),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                            if (canShowSecondProfile) const SizedBox(height: 20),
+                            Center(
+                              child: Transform.translate(
+                                offset: mainContentOffset,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: chartSize,
+                                      height: chartSize + 68,
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Positioned(
+                                            top: 0,
+                                            left: 16,
+                                            right: 16,
                                         child: SizedBox(
                                           height: 52,
                                           child: Align(
@@ -1115,45 +1121,49 @@ class _HomeScreenState extends State<HomeScreen> {
                             onDismiss: () => state.dismissInventoryOnboarding(),
                           ),
                         ],
-                        if (state.shouldShowInventoryAlert) ...[
-                          const SizedBox(height: 20),
-                          if (!secondVisible) const Spacer(),
-                          Transform.translate(
-                            offset: const Offset(0, -50),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange[50],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.orange[300]!,
-                                  width: 1.5,
+                      ],
+                    ),
+                        if (shouldShowInventoryAlert) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: Transform.translate(
+                              offset:
+                                  secondVisible ? const Offset(0, -50) : Offset.zero,
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: Colors.orange[700],
-                                    size: 24,
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.orange[300]!,
+                                    width: 1.5,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.orange[900],
-                                        height: 1.4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.orange[700],
+                                      size: 24,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.orange[900],
+                                          height: 1.4,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
