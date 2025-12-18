@@ -455,6 +455,8 @@ class ContactLensState extends ChangeNotifier {
   bool get shouldShowInventoryOnboarding =>
       !_inventoryOnboardingDismissed && _profile.inventoryCount == null;
 
+  bool get isInventoryOnboardingCompleted => !shouldShowInventoryOnboarding;
+
   Future<void> recordExchangeToday() async {
     await _updateProfile(
       (current) => current.copyWith(startDate: DateTime.now()),
@@ -901,6 +903,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
     final double alertTopGap = secondVisible ? 20 : 12;
+    final isInventoryOnboardingCompleted =
+        state.isInventoryOnboardingCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -916,6 +920,9 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  physics: isInventoryOnboardingCompleted
+                      ? const NeverScrollableScrollPhysics()
+                      : null,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Column(
