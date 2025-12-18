@@ -769,6 +769,10 @@ class ContactLensState extends ChangeNotifier {
     await _inAppPurchase.restorePurchases();
   }
 
+  Future<void> _restorePurchases() async {
+    await restorePurchases();
+  }
+
   Future<void> _setPremium(bool value) async {
     if (_isPremium == value) return;
     _isPremium = value;
