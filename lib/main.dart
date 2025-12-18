@@ -84,10 +84,125 @@ class MyApp extends StatelessWidget {
             Locale('ja', 'JP'),
             Locale('en', 'US'),
           ],
-          home: const HomeScreen(),
+          home: const RootScreen(),
         );
       },
     );
+  }
+}
+
+class RootScreen extends StatelessWidget {
+  const RootScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ContactLensState>(
+      builder: (context, state, _) {
+        if (state.isInventoryOnboardingCompleted) {
+          return const HomeScreen();
+        }
+        return const InventoryOnboardingScreen();
+      },
+    );
+  }
+}
+
+class InventoryOnboardingScreen extends StatefulWidget {
+  const InventoryOnboardingScreen({super.key});
+
+  @override
+  State<InventoryOnboardingScreen> createState() =>
+      _InventoryOnboardingScreenState();
+}
+
+class _InventoryOnboardingScreenState
+    extends State<InventoryOnboardingScreen> {
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ContactLensState>();
+    final accentColor = state.themeColor;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: accentColor,
+        title: const Text('初期設定'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '在庫設定をはじめましょう',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'コンタクトレンズの残り個数を登録すると、指定した基準でアラートを受け取れます。後から設定を変更することもできます。',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              InventoryOnboardingCard(
+                accentColor: accentColor,
+                onSetup: _startInventorySetup,
+                onDismiss: _skipOnboarding,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _startInventorySetup() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    final state = context.read<ContactLensState>();
+    final saved = await showInventoryPicker(
+      context,
+      state,
+      isCurrentInventory: true,
+    );
+
+    if (saved) {
+      await _completeOnboarding(state, enableInventory: true);
+    }
+
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _skipOnboarding() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    final state = context.read<ContactLensState>();
+    await _completeOnboarding(state, enableInventory: false);
+
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _completeOnboarding(
+    ContactLensState state, {
+    required bool enableInventory,
+  }) async {
+    if (enableInventory) {
+      await state.setShowInventory(true);
+    }
+    await state.dismissInventoryOnboarding();
   }
 }
 
@@ -903,8 +1018,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
     final double alertTopGap = secondVisible ? 20 : 12;
-    final isInventoryOnboardingCompleted =
-        state.isInventoryOnboardingCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -920,9 +1033,6 @@ class _HomeScreenState extends State<HomeScreen> {
               builder: (context, constraints) {
                 return SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  physics: isInventoryOnboardingCompleted
-                      ? const NeverScrollableScrollPhysics()
-                      : null,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(minHeight: constraints.maxHeight),
                     child: Column(
@@ -1131,14 +1241,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(height: 32),
-                            if (state.shouldShowInventoryOnboarding) ...[
-                              const SizedBox(height: 20),
-                              InventoryOnboardingCard(
-                                accentColor: themeColor,
-                                onSetup: () => _startInventorySetup(state),
-                                onDismiss: () => state.dismissInventoryOnboarding(),
-                              ),
-                            ],
                             if (shouldShowInventoryAlert) ...[
                               SizedBox(height: alertTopGap),
                               Transform.translate(
@@ -1224,23 +1326,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _startInventorySetup(ContactLensState state) async {
-    final saved = await showInventoryPicker(
-      context,
-      state,
-      isCurrentInventory: true,
-    );
-
-    if (!saved) {
-      return;
-    }
-
-    if (!mounted) return;
-
-    await state.setShowInventory(true);
-    await state.dismissInventoryOnboarding();
   }
 
   void _showExchangeModal(ContactLensState state) {
