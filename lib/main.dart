@@ -773,6 +773,8 @@ class ContactLensState extends ChangeNotifier {
     await restorePurchases();
   }
 
+  Future<void> setPremium(bool value) => _setPremium(value);
+
   Future<void> _setPremium(bool value) async {
     if (_isPremium == value) return;
     _isPremium = value;
@@ -785,7 +787,7 @@ class ContactLensState extends ChangeNotifier {
       if (purchase.productID == premiumProductId &&
           (purchase.status == PurchaseStatus.purchased ||
               purchase.status == PurchaseStatus.restored)) {
-        unawaited(_setPremium(true));
+        unawaited(setPremium(true));
       }
       if (purchase.pendingCompletePurchase) {
         _inAppPurchase.completePurchase(purchase);
@@ -2813,6 +2815,9 @@ class _PaywallPageState extends State<PaywallPage> {
   String? _error;
   bool _didClose = false;
 
+  static const _userFacingErrorMessage =
+      '現在購入情報を取得できません（ストア設定前/テスト環境未設定の可能性があります）';
+
   @override
   void initState() {
     super.initState();
@@ -2823,18 +2828,29 @@ class _PaywallPageState extends State<PaywallPage> {
     setState(() {
       _isLoading = true;
       _error = null;
+      _product = null;
     });
     try {
+      final isAvailable = await InAppPurchase.instance.isAvailable();
+      if (!isAvailable) {
+        debugPrint('Store unavailable while loading product details');
+        setState(() {
+          _error = _userFacingErrorMessage;
+        });
+        return;
+      }
       final response = await InAppPurchase.instance.queryProductDetails(
         {ContactLensState.premiumProductId},
       );
       if (response.error != null) {
+        debugPrint('Product query error: ${response.error}');
         setState(() {
-          _error = response.error?.message ?? '購入情報の取得に失敗しました';
+          _error = _userFacingErrorMessage;
         });
       } else if (response.productDetails.isEmpty) {
+        debugPrint('No product details found for ${ContactLensState.premiumProductId}');
         setState(() {
-          _error = '商品情報が見つかりませんでした';
+          _error = _userFacingErrorMessage;
         });
       } else {
         setState(() {
@@ -2842,8 +2858,9 @@ class _PaywallPageState extends State<PaywallPage> {
         });
       }
     } catch (e) {
+      debugPrint('Failed to load product details: $e');
       setState(() {
-        _error = '商品情報の取得に失敗しました';
+        _error = _userFacingErrorMessage;
       });
     } finally {
       if (mounted) {
@@ -2871,61 +2888,64 @@ class _PaywallPageState extends State<PaywallPage> {
             title: const Text('Premium'),
             backgroundColor: themeColor,
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Premiumで利用できる機能',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                const Text('・自動スケジュール更新'),
-                const Text('・2つ目のコンタクト登録'),
-                const SizedBox(height: 24),
-                if (_isLoading)
-                  const Center(child: CircularProgressIndicator())
-                else if (_error != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.redAccent),
-                      ),
-                      TextButton(
-                        onPressed: _loadProduct,
-                        child: const Text('再読み込み'),
-                      ),
-                    ],
-                  )
-                else ...[
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    _product?.title ?? 'Premium',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _product?.price ?? '',
+                    'Premiumで快適に管理',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '面倒な管理を、もっとラクに。',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 24),
+                  _FeatureCard(
+                    icon: Icons.autorenew,
+                    title: '自動スケジュール更新',
+                    description: '交換日を自動で次周期へ更新して、入力の手間を減らします',
+                    color: themeColor,
+                  ),
                   const SizedBox(height: 12),
+                  _FeatureCard(
+                    icon: Icons.view_module,
+                    title: '2種類のレンズ管理',
+                    description: 'カラコン×コンタクトなど2種類の交換周期を同時管理。左/右の管理にも便利',
+                    color: themeColor,
+                  ),
+                  const SizedBox(height: 24),
+                  _PriceBox(
+                    themeColor: themeColor,
+                    title: _product?.title ?? 'Premiumプラン',
+                    price: _product?.price ?? '—',
+                  ),
+                  const SizedBox(height: 16),
+                  if (_isLoading) ...[
+                    const Center(child: CircularProgressIndicator()),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_error != null)
+                    _ErrorMessage(
+                      message: _error!,
+                      onRetry: _loadProduct,
+                    ),
+                  if (_error != null) const SizedBox(height: 16),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: themeColor,
                       foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    onPressed: _product == null
-                        ? null
-                        : () {
-                            state.purchasePremium(_product!);
-                          },
+                    onPressed: _handlePurchase,
                     child: const Text('購入する'),
                   ),
                   const SizedBox(height: 8),
@@ -2933,15 +2953,181 @@ class _PaywallPageState extends State<PaywallPage> {
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    onPressed: state.restorePurchases,
+                    onPressed: _handleRestore,
                     child: const Text('購入を復元する'),
                   ),
                 ],
-              ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  void _handlePurchase() {
+    if (_isLoading || _product == null) {
+      _showSnackBar(_userFacingErrorMessage);
+      return;
+    }
+    InAppPurchase.instance.isAvailable().then((isAvailable) {
+      if (!isAvailable) {
+        _showSnackBar(_userFacingErrorMessage);
+        return;
+      }
+      final product = _product;
+      if (product != null) {
+        context.read<ContactLensState>().purchasePremium(product);
+      }
+    });
+  }
+
+  void _handleRestore() {
+    if (_isLoading) {
+      _showSnackBar('現在購入情報を取得できません');
+      return;
+    }
+    context.read<ContactLensState>().restorePurchases();
+  }
+
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+}
+
+class _PriceBox extends StatelessWidget {
+  const _PriceBox({
+    required this.themeColor,
+    required this.title,
+    required this.price,
+  });
+
+  final Color themeColor;
+  final String title;
+  final String price;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: themeColor.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            price,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorMessage extends StatelessWidget {
+  const _ErrorMessage({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message,
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+          TextButton(
+            onPressed: onRetry,
+            child: const Text('再読み込み'),
+          ),
+        ],
+      ),
     );
   }
 }
