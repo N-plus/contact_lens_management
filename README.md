@@ -34,3 +34,11 @@ To regenerate the icon set on a machine that has Flutter available:
 Note: the current container image does not include Flutter/Dart tooling and
 cannot fetch it from the network, so the generation step must be run in a
 Flutter-enabled environment.
+
+## Manual testing checklist
+
+- 未購入状態で自動スケジュール更新をONにしようとして、Paywallが表示されSwitchがOFFのままになることを確認する。
+- 未購入状態で「2つ目のコンタクトを登録」をタップしてPaywallが表示されることを確認する。
+- Premium購入後に自動スケジュール更新を操作でき、2つ目のコンタクトを登録できることを確認する。
+- アプリを再起動しても購入状態が復元され、Premiumが維持されることを確認する。
+- Paywallの「購入を復元する」ボタンが購入状態を復元することを確認する。

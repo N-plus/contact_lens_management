@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -440,6 +442,8 @@ class ContactLensState extends ChangeNotifier {
       'inventoryOnboardingDismissed';
   static const _soundEnabledKey = 'soundEnabled';
   static const _showSecondProfileKey = 'showSecondProfile';
+  static const _isPremiumKey = 'isPremium';
+  static const premiumProductId = 'premium_monthly';
 
   static const _lensTypeKey = 'lensType';
   static const int oneDayCycle = 1;
@@ -470,9 +474,17 @@ class ContactLensState extends ChangeNotifier {
   int _selectedProfileIndex = 0;
   bool _inventoryOnboardingDismissed = false;
   bool _showSecondProfile = true;
+  bool _isPremium = false;
+  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
+    _isPremium = _prefs?.getBool(_isPremiumKey) ?? false;
+    _purchaseSubscription = _inAppPurchase.purchaseStream.listen(
+      _onPurchaseUpdated,
+      onDone: () => _purchaseSubscription?.cancel(),
+    );
     _selectedProfileIndex = _prefs?.getInt(_selectedProfileIndexKey) ?? 0;
     _inventoryOnboardingDismissed =
         _prefs?.getBool(_inventoryOnboardingDismissedKey) ?? false;
@@ -493,8 +505,10 @@ class ContactLensState extends ChangeNotifier {
         _selectedProfileIndex.clamp(0, _profiles.length - 1).toInt();
 
     _autoAdvanceAll();
+    await _applyPremiumRestrictions();
     await _persist();
     await _rescheduleNotifications();
+    unawaited(_restorePurchases());
     notifyListeners();
   }
 
@@ -502,6 +516,7 @@ class ContactLensState extends ChangeNotifier {
   int get selectedProfileIndex => _selectedProfileIndex;
   bool get hasSecondProfile => _profiles[1].isRegistered;
   bool get showSecondProfile => _showSecondProfile;
+  bool get isPremium => _isPremium;
   String get currentProfileName => _profile.name;
   String get currentLensType => _profile.lensType;
   String profileName(int index) => _profiles[index].name;
@@ -739,6 +754,41 @@ class ContactLensState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> purchasePremium(ProductDetails product) async {
+    if (!await _inAppPurchase.isAvailable()) {
+      return;
+    }
+    final param = PurchaseParam(productDetails: product);
+    await _inAppPurchase.buyNonConsumable(purchaseParam: param);
+  }
+
+  Future<void> restorePurchases() async {
+    if (!await _inAppPurchase.isAvailable()) {
+      return;
+    }
+    await _inAppPurchase.restorePurchases();
+  }
+
+  Future<void> _setPremium(bool value) async {
+    if (_isPremium == value) return;
+    _isPremium = value;
+    await _prefs?.setBool(_isPremiumKey, _isPremium);
+    notifyListeners();
+  }
+
+  void _onPurchaseUpdated(List<PurchaseDetails> detailsList) {
+    for (final purchase in detailsList) {
+      if (purchase.productID == premiumProductId &&
+          (purchase.status == PurchaseStatus.purchased ||
+              purchase.status == PurchaseStatus.restored)) {
+        unawaited(_setPremium(true));
+      }
+      if (purchase.pendingCompletePurchase) {
+        _inAppPurchase.completePurchase(purchase);
+      }
+    }
+  }
+
   Future<ContactProfile?> _loadProfile(int index) async {
     final stored = _prefs?.getString('$_profileKeyPrefix$index');
     if (stored == null) {
@@ -821,6 +871,20 @@ class ContactLensState extends ChangeNotifier {
     }
   }
 
+  Future<void> _applyPremiumRestrictions() async {
+    if (_isPremium) return;
+    var updated = false;
+    for (var i = 0; i < _profiles.length; i++) {
+      if (_profiles[i].autoSchedule) {
+        _profiles[i] = _profiles[i].copyWith(autoSchedule: false);
+        updated = true;
+      }
+    }
+    if (updated) {
+      await _persist();
+    }
+  }
+
   Future<void> _persist() async {
     for (var i = 0; i < _profiles.length; i++) {
       await _prefs?.setString(
@@ -834,6 +898,7 @@ class ContactLensState extends ChangeNotifier {
       _inventoryOnboardingDismissed,
     );
     await _prefs?.setBool(_showSecondProfileKey, _showSecondProfile);
+    await _prefs?.setBool(_isPremiumKey, _isPremium);
   }
 
   DateTime _today() {
@@ -954,6 +1019,12 @@ class ContactLensState extends ChangeNotifier {
       time.minute,
     );
     return scheduled;
+  }
+
+  @override
+  void dispose() {
+    _purchaseSubscription?.cancel();
+    super.dispose();
   }
 
   Color _colorWithDefaultOpacity(int index) {
@@ -2282,10 +2353,15 @@ class SettingsPage extends StatelessWidget {
               _buildSwitchTile(
                 title: '自動スケジュール更新',
                 subtitle: '交換日到来時に次周期へ自動更新',
-                value: state.autoSchedule,
+                value: state.isPremium ? state.autoSchedule : false,
                 activeColor: themeColor,
+                badge: _premiumBadge(context),
                 onChanged: (value) {
-                  state.setAutoSchedule(value);
+                  if (state.isPremium) {
+                    state.setAutoSchedule(value);
+                  } else {
+                    _showPaywall(context);
+                  }
                 },
               ),
               if (!hasSecondProfile) ...[
@@ -2301,10 +2377,16 @@ class SettingsPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed: () => _showSecondContactDialog(context, state),
-                    icon: const Icon(Icons.add),
+                    onPressed: () async {
+                      if (state.isPremium) {
+                        await _showSecondContactDialog(context, state);
+                      } else {
+                        await _showPaywall(context);
+                      }
+                    },
+                    icon: Icon(state.isPremium ? Icons.add : Icons.lock),
                     label: const Text(
-                      '2つ目のコンタクトを登録',
+                      '2つ目のコンタクトを登録 (Premium)',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -2354,6 +2436,33 @@ class SettingsPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _showPaywall(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PaywallPage()),
+    );
+  }
+
+  Widget _premiumBadge(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(
+        'Premium',
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 
@@ -2608,9 +2717,15 @@ class SettingsPage extends StatelessWidget {
     required bool value,
     required Color activeColor,
     required ValueChanged<bool> onChanged,
+    Widget? badge,
   }) {
     return SwitchListTile(
-      title: Text(title),
+      title: Row(
+        children: [
+          Expanded(child: Text(title)),
+          if (badge != null) badge,
+        ],
+      ),
       subtitle: subtitle != null ? Text(subtitle) : null,
       value: value,
       activeColor: activeColor,
@@ -2679,6 +2794,152 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+}
+
+class PaywallPage extends StatefulWidget {
+  const PaywallPage({super.key});
+
+  @override
+  State<PaywallPage> createState() => _PaywallPageState();
+}
+
+class _PaywallPageState extends State<PaywallPage> {
+  ProductDetails? _product;
+  bool _isLoading = true;
+  String? _error;
+  bool _didClose = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProduct();
+  }
+
+  Future<void> _loadProduct() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final response = await InAppPurchase.instance.queryProductDetails(
+        {ContactLensState.premiumProductId},
+      );
+      if (response.error != null) {
+        setState(() {
+          _error = response.error?.message ?? '購入情報の取得に失敗しました';
+        });
+      } else if (response.productDetails.isEmpty) {
+        setState(() {
+          _error = '商品情報が見つかりませんでした';
+        });
+      } else {
+        setState(() {
+          _product = response.productDetails.first;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = '商品情報の取得に失敗しました';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ContactLensState>(
+      builder: (context, state, _) {
+        if (state.isPremium && !_didClose) {
+          _didClose = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop(true);
+            }
+          });
+        }
+
+        final themeColor = state.themeColor;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Premium'),
+            backgroundColor: themeColor,
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Premiumで利用できる機能',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                const Text('・自動スケジュール更新'),
+                const Text('・2つ目のコンタクト登録'),
+                const SizedBox(height: 24),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else if (_error != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent),
+                      ),
+                      TextButton(
+                        onPressed: _loadProduct,
+                        child: const Text('再読み込み'),
+                      ),
+                    ],
+                  )
+                else ...[
+                  Text(
+                    _product?.title ?? 'Premium',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _product?.price ?? '',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: themeColor,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: _product == null
+                        ? null
+                        : () {
+                            state.purchasePremium(_product!);
+                          },
+                    child: const Text('購入する'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    onPressed: state.restorePurchases,
+                    child: const Text('購入を復元する'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _StartDateButton extends StatelessWidget {
