@@ -767,6 +767,8 @@ class ContactLensState extends ChangeNotifier {
       }
     }
 
+    final contactLabel = _profiles[1].isRegistered ? _profile.name : 'コンタクト';
+
     if (_profile.notifyDayBefore) {
       final scheduled = _scheduledDateTime(
         exchange.subtract(const Duration(days: 1)),
@@ -775,8 +777,8 @@ class ContactLensState extends ChangeNotifier {
       if (scheduled.isAfter(now)) {
         await _notificationsPlugin.zonedSchedule(
           _dayBeforeNotificationId,
-          'コンタクト交換のお知らせ',
-          '明日でコンタクト交換です',
+          '$contactLabel交換の予定があります',
+          '明日は$contactLabelの交換日です。忘れずにご準備ください。',
           scheduled,
           const NotificationDetails(
             android: AndroidNotificationDetails(
@@ -801,8 +803,8 @@ class ContactLensState extends ChangeNotifier {
       if (scheduled.isAfter(now)) {
         await _notificationsPlugin.zonedSchedule(
           _dayOfNotificationId,
-          'コンタクト交換のお知らせ',
-          '今日でコンタクト交換です',
+          '今日は${contactLabel}交換日です',
+          '新しい$contactLabelに交換しましょう。',
           scheduled,
           const NotificationDetails(
             android: AndroidNotificationDetails(
