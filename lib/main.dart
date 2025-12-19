@@ -2922,7 +2922,12 @@ class _PaywallPageState extends State<PaywallPage> {
                   ),
                   const SizedBox(height: 12),
                   _FeatureCard(
-                    icon: const Icon(Icons.view_module),
+                    icon: Image.asset(
+                      'assets/images/multi_lens.png',
+                      width: 44,
+                      height: 44,
+                      fit: BoxFit.contain,
+                    ),
                     title: '2種類のレンズ管理',
                     description: 'カラコン×コンタクトなど2種類の交換周期を同時管理。左/右の管理にも便利',
                     color: themeColor,
