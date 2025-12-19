@@ -2912,8 +2912,9 @@ class _PaywallPageState extends State<PaywallPage> {
                   _FeatureCard(
                     icon: Image.asset(
                       'assets/icons/auto_schedule.png',
-                      width: 24,
-                      height: 24,
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.contain,
                     ),
                     title: '自動スケジュール更新',
                     description: '交換日を自動で次周期へ更新して、入力の手間を減らします',
