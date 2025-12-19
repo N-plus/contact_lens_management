@@ -2910,14 +2910,18 @@ class _PaywallPageState extends State<PaywallPage> {
                   ),
                   const SizedBox(height: 24),
                   _FeatureCard(
-                    icon: Icons.autorenew,
+                    icon: Image.asset(
+                      'assets/icons/auto_schedule.png',
+                      width: 24,
+                      height: 24,
+                    ),
                     title: '自動スケジュール更新',
                     description: '交換日を自動で次周期へ更新して、入力の手間を減らします',
                     color: themeColor,
                   ),
                   const SizedBox(height: 12),
                   _FeatureCard(
-                    icon: Icons.view_module,
+                    icon: const Icon(Icons.view_module),
                     title: '2種類のレンズ管理',
                     description: 'カラコン×コンタクトなど2種類の交換周期を同時管理。左/右の管理にも便利',
                     color: themeColor,
@@ -3049,7 +3053,7 @@ class _FeatureCard extends StatelessWidget {
     required this.color,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String description;
   final Color color;
@@ -3071,7 +3075,12 @@ class _FeatureCard extends StatelessWidget {
                 color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(icon, color: color),
+              child: Center(
+                child: IconTheme(
+                  data: IconThemeData(color: color, size: 24),
+                  child: icon,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
