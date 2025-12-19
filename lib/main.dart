@@ -2923,7 +2923,7 @@ class _PaywallPageState extends State<PaywallPage> {
                   const SizedBox(height: 12),
                   _FeatureCard(
                     icon: Image.asset(
-                      'assets/images/multi_lens.png',
+                      'assets/icons/multi_lens.png',
                       width: 44,
                       height: 44,
                       fit: BoxFit.contain,
