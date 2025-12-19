@@ -2912,8 +2912,8 @@ class _PaywallPageState extends State<PaywallPage> {
                   _FeatureCard(
                     icon: Image.asset(
                       'assets/icons/auto_schedule.png',
-                      width: 32,
-                      height: 32,
+                      width: 44,
+                      height: 44,
                       fit: BoxFit.contain,
                     ),
                     title: '自動スケジュール更新',
@@ -3070,8 +3070,8 @@ class _FeatureCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 54,
-              height: 54,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
@@ -3080,14 +3080,11 @@ class _FeatureCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: Center(
                   child: SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: FittedBox(
-                      fit: BoxFit.contain,
-                      child: IconTheme(
-                        data: IconThemeData(color: color, size: 32),
-                        child: icon,
-                      ),
+                    width: 44,
+                    height: 44,
+                    child: IconTheme(
+                      data: IconThemeData(color: color, size: 44),
+                      child: icon,
                     ),
                   ),
                 ),
