@@ -100,12 +100,198 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ContactLensState>(
       builder: (context, state, _) {
-        if (state.isInventoryOnboardingCompleted) {
-          return const HomeScreen();
+        if (!state.isInitialOnboardingCompleted) {
+          return const InitialOnboardingScreen();
         }
-        return const InventoryOnboardingScreen();
+        if (!state.isInventoryOnboardingCompleted) {
+          return const InventoryOnboardingScreen();
+        }
+        return const HomeScreen();
       },
     );
+  }
+}
+
+class InitialOnboardingScreen extends StatefulWidget {
+  const InitialOnboardingScreen({super.key});
+
+  @override
+  State<InitialOnboardingScreen> createState() =>
+      _InitialOnboardingScreenState();
+}
+
+class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
+  bool? _usesTwoWeekLens;
+  DateTime? _selectedStartDate;
+  bool _isProcessing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ContactLensState>();
+    final accentColor = state.themeColor;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: accentColor,
+        title: const Text('初期設定'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '今使っているレンズの状況を教えてください',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '初回起動時にだけ表示されます。後から設定画面で変更できます。',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[700],
+                      height: 1.5,
+                    ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '現在、2weekタイプのコンタクトレンズを使用していますか？',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _SelectionChip(
+                    label: 'はい',
+                    isSelected: _usesTwoWeekLens == true,
+                    color: accentColor,
+                    onTap: () => setState(() => _usesTwoWeekLens = true),
+                  ),
+                  _SelectionChip(
+                    label: 'いいえ',
+                    isSelected: _usesTwoWeekLens == false,
+                    color: accentColor,
+                    onTap: () => setState(() => _usesTwoWeekLens = false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              if (_usesTwoWeekLens == true) ...[
+                Text(
+                  '使用開始日',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  leading: Icon(Icons.calendar_today, color: accentColor),
+                  title: Text(
+                    _selectedStartDate == null
+                        ? '未選択'
+                        : formatJapaneseDateWithWeekday(_selectedStartDate!),
+                  ),
+                  subtitle: const Text('過去日付も選択できます'),
+                  trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  onTap: _pickStartDate,
+                ),
+                const SizedBox(height: 8),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed:
+                      _isProcessing || _usesTwoWeekLens == null ? null : _save,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: accentColor,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    '次へ進む',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: _isProcessing ? null : _skip,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.grey[700],
+                ),
+                child: const Text('スキップ'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickStartDate() async {
+    final now = DateTime.now();
+    final initialDate = _selectedStartDate ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: now.subtract(const Duration(days: 365 * 10)),
+      lastDate: now.add(const Duration(days: 365 * 5)),
+      helpText: '使用開始日',
+    );
+
+    if (picked != null) {
+      setState(() => _selectedStartDate = picked);
+    }
+  }
+
+  Future<void> _save() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    final state = context.read<ContactLensState>();
+    final useTwoWeek = _usesTwoWeekLens ?? false;
+
+    if (useTwoWeek) {
+      final selected = _selectedStartDate ?? DateTime.now();
+      await state.setCycleLength(ContactLensState.twoWeekCycle);
+      await state.recordExchangeOn(selected);
+    }
+
+    await state.dismissInitialOnboarding();
+
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _skip() async {
+    if (_isProcessing) return;
+    setState(() => _isProcessing = true);
+
+    final state = context.read<ContactLensState>();
+    await state.dismissInitialOnboarding();
+
+    if (mounted) {
+      setState(() => _isProcessing = false);
+    }
   }
 }
 
@@ -440,6 +626,7 @@ class ContactLensState extends ChangeNotifier {
   static const _inventoryThresholdKey = 'inventoryThreshold';
   static const _inventoryOnboardingDismissedKey =
       'inventoryOnboardingDismissed';
+  static const _initialOnboardingDismissedKey = 'initialOnboardingDismissed';
   static const _soundEnabledKey = 'soundEnabled';
   static const _showSecondProfileKey = 'showSecondProfile';
   static const _isPremiumKey = 'isPremium';
@@ -473,6 +660,7 @@ class ContactLensState extends ChangeNotifier {
   ];
   int _selectedProfileIndex = 0;
   bool _inventoryOnboardingDismissed = false;
+  bool _initialOnboardingDismissed = false;
   bool _showSecondProfile = true;
   bool _isPremium = false;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
@@ -488,6 +676,8 @@ class ContactLensState extends ChangeNotifier {
     _selectedProfileIndex = _prefs?.getInt(_selectedProfileIndexKey) ?? 0;
     _inventoryOnboardingDismissed =
         _prefs?.getBool(_inventoryOnboardingDismissedKey) ?? false;
+    _initialOnboardingDismissed =
+        _prefs?.getBool(_initialOnboardingDismissedKey) ?? false;
     _showSecondProfile = _prefs?.getBool(_showSecondProfileKey) ?? true;
 
     final storedPrimary = await _loadProfile(0);
@@ -538,6 +728,8 @@ class ContactLensState extends ChangeNotifier {
   int? get inventoryCount => _profile.inventoryCount;
   int get inventoryThreshold => _profile.inventoryThreshold;
   bool get inventoryOnboardingDismissed => _inventoryOnboardingDismissed;
+  bool get shouldShowInitialOnboarding => !_initialOnboardingDismissed;
+  bool get isInitialOnboardingCompleted => !shouldShowInitialOnboarding;
   bool get isInventoryConfigured => _profile.inventoryCount != null;
   bool get soundEnabled => _profile.soundEnabled;
   String get cycleLabel {
@@ -586,6 +778,13 @@ class ContactLensState extends ChangeNotifier {
       !_inventoryOnboardingDismissed && _profile.inventoryCount == null;
 
   bool get isInventoryOnboardingCompleted => !shouldShowInventoryOnboarding;
+
+  Future<void> dismissInitialOnboarding() async {
+    if (_initialOnboardingDismissed) return;
+    _initialOnboardingDismissed = true;
+    await _prefs?.setBool(_initialOnboardingDismissedKey, true);
+    notifyListeners();
+  }
 
   Future<void> recordExchangeToday() async {
     await _updateProfile(
@@ -902,6 +1101,10 @@ class ContactLensState extends ChangeNotifier {
     await _prefs?.setBool(
       _inventoryOnboardingDismissedKey,
       _inventoryOnboardingDismissed,
+    );
+    await _prefs?.setBool(
+      _initialOnboardingDismissedKey,
+      _initialOnboardingDismissed,
     );
     await _prefs?.setBool(_showSecondProfileKey, _showSecondProfile);
     await _prefs?.setBool(_isPremiumKey, _isPremium);
@@ -3148,6 +3351,47 @@ class _ErrorMessage extends StatelessWidget {
             child: const Text('再読み込み'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SelectionChip extends StatelessWidget {
+  const _SelectionChip({
+    required this.label,
+    required this.isSelected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withOpacity(0.1) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: isSelected ? color : Colors.grey[800],
+          ),
+        ),
       ),
     );
   }
