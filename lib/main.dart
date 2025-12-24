@@ -103,9 +103,6 @@ class RootScreen extends StatelessWidget {
         if (!state.isInitialOnboardingCompleted) {
           return const InitialOnboardingScreen();
         }
-        if (!state.isInventoryOnboardingCompleted) {
-          return const InventoryOnboardingScreen();
-        }
         return const HomeScreen();
       },
     );
@@ -356,6 +353,7 @@ class _InventoryOnboardingScreenState
 
     if (saved) {
       await _completeOnboarding(state, enableInventory: true);
+      _closeOnboarding();
     }
 
     if (mounted) {
@@ -369,6 +367,7 @@ class _InventoryOnboardingScreenState
 
     final state = context.read<ContactLensState>();
     await _completeOnboarding(state, enableInventory: false);
+    _closeOnboarding(result: false);
 
     if (mounted) {
       setState(() => _isProcessing = false);
@@ -383,6 +382,14 @@ class _InventoryOnboardingScreenState
       await state.setShowInventory(true);
     }
     await state.dismissInventoryOnboarding();
+  }
+
+  void _closeOnboarding({bool result = true}) {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop(result);
+    }
   }
 }
 
@@ -2490,6 +2497,18 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
               const Divider(height: 32),
+              if (state.shouldShowInventoryOnboarding) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: InventoryOnboardingCard(
+                    onSetup: () =>
+                        _startInventoryOnboarding(context: context, state: state),
+                    onDismiss: () => _dismissInventoryOnboarding(state),
+                    accentColor: themeColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               _buildSectionHeader('コンタクトの在庫'),
               _buildSwitchTile(
                 title: '在庫数を表示',
@@ -2643,6 +2662,23 @@ class SettingsPage extends StatelessWidget {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const PaywallPage()),
     );
+  }
+
+  Future<void> _startInventoryOnboarding({
+    required BuildContext context,
+    required ContactLensState state,
+  }) async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const InventoryOnboardingScreen()),
+    );
+
+    if (result == true && !state.showInventory) {
+      await state.setShowInventory(true);
+    }
+  }
+
+  Future<void> _dismissInventoryOnboarding(ContactLensState state) async {
+    await state.dismissInventoryOnboarding();
   }
 
   Widget _premiumBadge(BuildContext context) {
