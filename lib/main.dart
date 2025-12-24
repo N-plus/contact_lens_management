@@ -148,14 +148,6 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                       fontWeight: FontWeight.bold,
                     ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                '初回起動時にだけ表示されます。後から設定画面で変更できます。',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
-                      height: 1.5,
-                    ),
-              ),
               const SizedBox(height: 24),
               Text(
                 '現在、2weekタイプのコンタクトレンズを使用していますか？',
