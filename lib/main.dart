@@ -122,12 +122,6 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
   DateTime? _selectedStartDate;
   bool _isProcessing = false;
 
-  Future<void> _markInventoryOnboardingComplete(
-    ContactLensState state,
-  ) async {
-    await state.dismissInventoryOnboarding();
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
@@ -351,7 +345,7 @@ class _InventoryOnboardingScreenState
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
-    await _markInventoryOnboardingComplete(state);
+    await _completeOnboarding(state, enableInventory: false);
     final saved = await showInventoryPicker(
       context,
       state,
@@ -359,7 +353,7 @@ class _InventoryOnboardingScreenState
     );
 
     if (saved) {
-      await state.setShowInventory(true);
+      await _completeOnboarding(state, enableInventory: true);
       _closeOnboarding();
     }
 
@@ -373,11 +367,22 @@ class _InventoryOnboardingScreenState
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
-    await _markInventoryOnboardingComplete(state);
+    await _completeOnboarding(state, enableInventory: false);
     _closeOnboarding(result: false);
 
     if (mounted) {
       setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _completeOnboarding(
+    ContactLensState state, {
+    required bool enableInventory,
+  }) async {
+    await state.dismissInventoryOnboarding();
+
+    if (enableInventory) {
+      await state.setShowInventory(true);
     }
   }
 
