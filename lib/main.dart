@@ -122,6 +122,12 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
   DateTime? _selectedStartDate;
   bool _isProcessing = false;
 
+  Future<void> _markInventoryOnboardingComplete(
+    ContactLensState state,
+  ) async {
+    await state.dismissInventoryOnboarding();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
@@ -345,6 +351,7 @@ class _InventoryOnboardingScreenState
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
+    await _markInventoryOnboardingComplete(state);
     final saved = await showInventoryPicker(
       context,
       state,
@@ -352,7 +359,7 @@ class _InventoryOnboardingScreenState
     );
 
     if (saved) {
-      await _completeOnboarding(state, enableInventory: true);
+      await state.setShowInventory(true);
       _closeOnboarding();
     }
 
@@ -366,22 +373,12 @@ class _InventoryOnboardingScreenState
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
-    await _completeOnboarding(state, enableInventory: false);
+    await _markInventoryOnboardingComplete(state);
     _closeOnboarding(result: false);
 
     if (mounted) {
       setState(() => _isProcessing = false);
     }
-  }
-
-  Future<void> _completeOnboarding(
-    ContactLensState state, {
-    required bool enableInventory,
-  }) async {
-    if (enableInventory) {
-      await state.setShowInventory(true);
-    }
-    await state.dismissInventoryOnboarding();
   }
 
   void _closeOnboarding({bool result = true}) {
@@ -773,8 +770,7 @@ class ContactLensState extends ChangeNotifier {
       _profile.inventoryCount != null &&
       _profile.inventoryCount! <= _profile.inventoryThreshold;
 
-  bool get shouldShowInventoryOnboarding =>
-      !_inventoryOnboardingDismissed && _profile.inventoryCount == null;
+  bool get shouldShowInventoryOnboarding => !_inventoryOnboardingDismissed;
 
   bool get isInventoryOnboardingCompleted => !shouldShowInventoryOnboarding;
 
@@ -2668,6 +2664,7 @@ class SettingsPage extends StatelessWidget {
     required BuildContext context,
     required ContactLensState state,
   }) async {
+    await state.dismissInventoryOnboarding();
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const InventoryOnboardingScreen()),
     );
