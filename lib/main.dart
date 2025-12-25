@@ -3161,6 +3161,32 @@ class _PaywallPageState extends State<PaywallPage> {
                         .bodyLarge
                         ?.copyWith(color: Colors.grey[700]),
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: themeColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'まずは無料体験から',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          '今すぐ始めても、2週間は無料で使えます',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   _FeatureCard(
                     icon: Image.asset(
@@ -3192,6 +3218,7 @@ class _PaywallPageState extends State<PaywallPage> {
                         themeColor: themeColor,
                         title: '月額プラン',
                         price: monthlyProduct.price,
+                        details: const [],
                       ),
                     if (monthlyProduct != null && yearlyProduct != null)
                       const SizedBox(height: 12),
@@ -3200,6 +3227,10 @@ class _PaywallPageState extends State<PaywallPage> {
                         themeColor: themeColor,
                         title: '年額プラン',
                         price: yearlyProduct.price,
+                        details: const [
+                          '月あたり 約210円',
+                          '月額プランより約30%お得',
+                        ],
                       ),
                     const SizedBox(height: 16),
                   ],
@@ -3221,7 +3252,7 @@ class _PaywallPageState extends State<PaywallPage> {
                         minimumSize: const Size.fromHeight(48),
                       ),
                       onPressed: () => _handlePurchase(monthlyProduct),
-                      child: Text('月額プランを購入 (${monthlyProduct.price})'),
+                      child: const Text('2週間無料で試す（月額プラン）'),
                     ),
                   if (monthlyProduct != null && yearlyProduct != null)
                     const SizedBox(height: 8),
@@ -3233,7 +3264,7 @@ class _PaywallPageState extends State<PaywallPage> {
                         minimumSize: const Size.fromHeight(48),
                       ),
                       onPressed: () => _handlePurchase(yearlyProduct),
-                      child: Text('年額プランを購入 (${yearlyProduct.price})'),
+                      child: const Text('2週間無料で試す（年額プラン）'),
                     ),
                   if (monthlyProduct != null || yearlyProduct != null)
                     const SizedBox(height: 8),
@@ -3288,11 +3319,13 @@ class _PriceBox extends StatelessWidget {
     required this.themeColor,
     required this.title,
     required this.price,
+    required this.details,
   });
 
   final Color themeColor;
   final String title;
   final String price;
+  final List<String> details;
 
   @override
   Widget build(BuildContext context) {
@@ -3320,6 +3353,21 @@ class _PriceBox extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
           ),
+          if (details.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...details.map(
+              (detail) => Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  detail,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: Colors.grey[700]),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
