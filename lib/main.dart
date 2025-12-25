@@ -2511,62 +2511,64 @@ class SettingsPage extends StatelessWidget {
                 const SizedBox(height: 16),
               ],
               _buildSectionHeader('コンタクトの在庫'),
-              _buildSwitchTile(
-                title: '在庫数を表示',
-                value: state.showInventory,
-                activeColor: themeColor,
-                onChanged: (value) {
-                  state.setShowInventory(value);
-                },
-              ),
-              if (state.showInventory) ...[
-                ListTile(
-                  title: const Text('現在の在庫'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        state.inventoryCount == null
-                            ? '未設定'
-                            : '${state.inventoryCount} 個',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.chevron_right, color: Colors.grey[400]),
-                    ],
-                  ),
-                  onTap: () => showInventoryPicker(
-                    context,
-                    state,
-                    isCurrentInventory: true,
-                  ),
+              if (!state.shouldShowInventoryOnboarding) ...[
+                _buildSwitchTile(
+                  title: '在庫数を表示',
+                  value: state.showInventory,
+                  activeColor: themeColor,
+                  onChanged: (value) {
+                    state.setShowInventory(value);
+                  },
                 ),
-                ListTile(
-                  title: const Text('お知らせ基準'),
-                  subtitle: Text('${state.inventoryThreshold} 個以下で通知'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '${state.inventoryThreshold} 個',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
+                if (state.showInventory) ...[
+                  ListTile(
+                    title: const Text('現在の在庫'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          state.inventoryCount == null
+                              ? '未設定'
+                              : '${state.inventoryCount} 個',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.chevron_right, color: Colors.grey[400]),
-                    ],
+                        const SizedBox(width: 8),
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
+                      ],
+                    ),
+                    onTap: () => showInventoryPicker(
+                      context,
+                      state,
+                      isCurrentInventory: true,
+                    ),
                   ),
-                  onTap: () => showInventoryPicker(
-                    context,
-                    state,
-                    isCurrentInventory: false,
+                  ListTile(
+                    title: const Text('お知らせ基準'),
+                    subtitle: Text('${state.inventoryThreshold} 個以下で通知'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${state.inventoryThreshold} 個',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
+                      ],
+                    ),
+                    onTap: () => showInventoryPicker(
+                      context,
+                      state,
+                      isCurrentInventory: false,
+                    ),
                   ),
-                ),
+                ],
               ],
               const Divider(height: 32),
               _buildSectionHeader('自動更新'),
