@@ -1568,45 +1568,41 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 if (shouldShowInventoryAlert) ...[
-                                  const SizedBox(height: 12),
-                                  Transform.translate(
-                                    offset:
-                                        secondVisible ? const Offset(0, -50) : Offset.zero,
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 14,
+                                  const SizedBox(height: 24),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange[50],
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.orange[300]!,
+                                        width: 1.5,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.orange[50],
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color: Colors.orange[300]!,
-                                          width: 1.5,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: Colors.orange[700],
+                                          size: 24,
                                         ),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Icon(
-                                            Icons.warning_amber_rounded,
-                                            color: Colors.orange[700],
-                                            size: 24,
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Text(
-                                              '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.orange[900],
-                                                height: 1.4,
-                                              ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.orange[900],
+                                              height: 1.4,
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
