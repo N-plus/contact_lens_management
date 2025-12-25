@@ -1343,7 +1343,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShiftMainContent = secondVisible && shouldShowInventoryAlert;
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
-    final double alertTopGap = secondVisible ? 20 : 12;
+    final double alertTopGap = secondVisible ? 12 : 4;
 
     return Scaffold(
       appBar: AppBar(
