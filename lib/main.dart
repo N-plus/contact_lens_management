@@ -2617,6 +2617,25 @@ class SettingsPage extends StatelessWidget {
                 ],
               ],
               const Divider(height: 32),
+              if (!state.isPremium) ...[
+                _buildSectionHeader('Premium'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: ListTile(
+                    leading:
+                        Icon(Icons.workspace_premium_outlined, color: themeColor),
+                    title: const Text('Premiumを試す'),
+                    subtitle: const Text('Premium機能を2週間無料で試せます'),
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    onTap: () => _showPaywall(context),
+                  ),
+                ),
+                const Divider(height: 32),
+              ],
               _buildSectionHeader('自動更新'),
               _buildSwitchTile(
                 title: '自動スケジュール更新',
