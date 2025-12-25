@@ -1478,8 +1478,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                               child: Text(
                                                                 '使用期限が過ぎています',
                                                                 textAlign: TextAlign.center,
+                                                                maxLines: 2,
+                                                                overflow: TextOverflow.visible,
                                                                 style: TextStyle(
-                                                                  fontSize: 24,
+                                                                  fontSize: 20,
                                                                   fontWeight: FontWeight.w700,
                                                                   color: overdueColor,
                                                                 ),
