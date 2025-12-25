@@ -631,7 +631,12 @@ class ContactLensState extends ChangeNotifier {
   static const _soundEnabledKey = 'soundEnabled';
   static const _showSecondProfileKey = 'showSecondProfile';
   static const _isPremiumKey = 'isPremium';
-  static const premiumProductId = 'premium_monthly';
+  static const premiumMonthlyProductId = 'premium_monthly_300';
+  static const premiumYearlyProductId = 'premium_yearly_2500';
+  static const Set<String> premiumProductIds = {
+    premiumMonthlyProductId,
+    premiumYearlyProductId,
+  };
 
   static const _lensTypeKey = 'lensType';
   static const int oneDayCycle = 1;
@@ -664,6 +669,8 @@ class ContactLensState extends ChangeNotifier {
   bool _initialOnboardingDismissed = false;
   bool _showSecondProfile = true;
   bool _isPremium = false;
+  List<ProductDetails> _availableProducts = [];
+  String? _productLoadError;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
@@ -696,6 +703,7 @@ class ContactLensState extends ChangeNotifier {
         _selectedProfileIndex.clamp(0, _profiles.length - 1).toInt();
 
     _autoAdvanceAll();
+    await queryProducts();
     await _applyPremiumRestrictions();
     await _persist();
     await _rescheduleNotifications();
@@ -708,6 +716,8 @@ class ContactLensState extends ChangeNotifier {
   bool get hasSecondProfile => _profiles[1].isRegistered;
   bool get showSecondProfile => _showSecondProfile;
   bool get isPremium => _isPremium;
+  List<ProductDetails> get availableProducts => List.unmodifiable(_availableProducts);
+  String? get productLoadError => _productLoadError;
   String get currentProfileName => _profile.name;
   String get currentLensType => _profile.lensType;
   String profileName(int index) => _profiles[index].name;
@@ -961,6 +971,34 @@ class ContactLensState extends ChangeNotifier {
     await _inAppPurchase.buyNonConsumable(purchaseParam: param);
   }
 
+  Future<void> queryProducts() async {
+    _productLoadError = null;
+    try {
+      if (!await _inAppPurchase.isAvailable()) {
+        _availableProducts = [];
+        _productLoadError =
+            '現在購入情報を取得できません（ストア設定前/テスト環境未設定の可能性があります）';
+        notifyListeners();
+        return;
+      }
+
+      final response = await _inAppPurchase.queryProductDetails(premiumProductIds);
+      _availableProducts = response.productDetails;
+
+      if (response.error != null || _availableProducts.isEmpty) {
+        _productLoadError =
+            '現在購入情報を取得できません（ストア設定前/テスト環境未設定の可能性があります）';
+      }
+    } catch (e) {
+      debugPrint('Failed to load product details: $e');
+      _availableProducts = [];
+      _productLoadError =
+          '現在購入情報を取得できません（ストア設定前/テスト環境未設定の可能性があります）';
+    }
+
+    notifyListeners();
+  }
+
   Future<void> restorePurchases() async {
     if (!await _inAppPurchase.isAvailable()) {
       return;
@@ -970,6 +1008,14 @@ class ContactLensState extends ChangeNotifier {
 
   Future<void> _restorePurchases() async {
     await restorePurchases();
+  }
+
+  ProductDetails? productForId(String productId) {
+    try {
+      return _availableProducts.firstWhere((product) => product.id == productId);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> setPremium(bool value) => _setPremium(value);
@@ -983,7 +1029,7 @@ class ContactLensState extends ChangeNotifier {
 
   void _onPurchaseUpdated(List<PurchaseDetails> detailsList) {
     for (final purchase in detailsList) {
-      if (purchase.productID == premiumProductId &&
+      if (premiumProductIds.contains(purchase.productID) &&
           (purchase.status == PurchaseStatus.purchased ||
               purchase.status == PurchaseStatus.restored)) {
         unawaited(setPremium(true));
@@ -3044,7 +3090,6 @@ class PaywallPage extends StatefulWidget {
 }
 
 class _PaywallPageState extends State<PaywallPage> {
-  ProductDetails? _product;
   bool _isLoading = true;
   String? _error;
   bool _didClose = false;
@@ -3062,45 +3107,15 @@ class _PaywallPageState extends State<PaywallPage> {
     setState(() {
       _isLoading = true;
       _error = null;
-      _product = null;
     });
-    try {
-      final isAvailable = await InAppPurchase.instance.isAvailable();
-      if (!isAvailable) {
-        debugPrint('Store unavailable while loading product details');
-        setState(() {
-          _error = _userFacingErrorMessage;
-        });
-        return;
-      }
-      final response = await InAppPurchase.instance.queryProductDetails(
-        {ContactLensState.premiumProductId},
-      );
-      if (response.error != null) {
-        debugPrint('Product query error: ${response.error}');
-        setState(() {
-          _error = _userFacingErrorMessage;
-        });
-      } else if (response.productDetails.isEmpty) {
-        debugPrint('No product details found for ${ContactLensState.premiumProductId}');
-        setState(() {
-          _error = _userFacingErrorMessage;
-        });
-      } else {
-        setState(() {
-          _product = response.productDetails.first;
-        });
-      }
-    } catch (e) {
-      debugPrint('Failed to load product details: $e');
-      setState(() {
-        _error = _userFacingErrorMessage;
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    await context.read<ContactLensState>().queryProducts();
+    if (!mounted) return;
+
+    final state = context.read<ContactLensState>();
+    setState(() {
+      _isLoading = false;
+      _error = state.productLoadError;
+    });
   }
 
   @override
@@ -3117,6 +3132,10 @@ class _PaywallPageState extends State<PaywallPage> {
         }
 
         final themeColor = state.themeColor;
+        final monthlyProduct =
+            state.productForId(ContactLensState.premiumMonthlyProductId);
+        final yearlyProduct =
+            state.productForId(ContactLensState.premiumYearlyProductId);
         return Scaffold(
           appBar: AppBar(
             title: const Text('Premium'),
@@ -3167,12 +3186,23 @@ class _PaywallPageState extends State<PaywallPage> {
                     color: themeColor,
                   ),
                   const SizedBox(height: 24),
-                  _PriceBox(
-                    themeColor: themeColor,
-                    title: _product?.title ?? 'Premiumプラン',
-                    price: _product?.price ?? '—',
-                  ),
-                  const SizedBox(height: 16),
+                  if (monthlyProduct != null || yearlyProduct != null) ...[
+                    if (monthlyProduct != null)
+                      _PriceBox(
+                        themeColor: themeColor,
+                        title: '月額プラン',
+                        price: monthlyProduct.price,
+                      ),
+                    if (monthlyProduct != null && yearlyProduct != null)
+                      const SizedBox(height: 12),
+                    if (yearlyProduct != null)
+                      _PriceBox(
+                        themeColor: themeColor,
+                        title: '年額プラン',
+                        price: yearlyProduct.price,
+                      ),
+                    const SizedBox(height: 16),
+                  ],
                   if (_isLoading) ...[
                     const Center(child: CircularProgressIndicator()),
                     const SizedBox(height: 16),
@@ -3183,16 +3213,30 @@ class _PaywallPageState extends State<PaywallPage> {
                       onRetry: _loadProduct,
                     ),
                   if (_error != null) const SizedBox(height: 16),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: themeColor,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(48),
+                  if (monthlyProduct != null)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      onPressed: () => _handlePurchase(monthlyProduct),
+                      child: Text('月額プランを購入 (${monthlyProduct.price})'),
                     ),
-                    onPressed: _handlePurchase,
-                    child: const Text('購入する'),
-                  ),
-                  const SizedBox(height: 8),
+                  if (monthlyProduct != null && yearlyProduct != null)
+                    const SizedBox(height: 8),
+                  if (yearlyProduct != null)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeColor.withOpacity(0.9),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(48),
+                      ),
+                      onPressed: () => _handlePurchase(yearlyProduct),
+                      child: Text('年額プランを購入 (${yearlyProduct.price})'),
+                    ),
+                  if (monthlyProduct != null || yearlyProduct != null)
+                    const SizedBox(height: 8),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
@@ -3209,8 +3253,8 @@ class _PaywallPageState extends State<PaywallPage> {
     );
   }
 
-  void _handlePurchase() {
-    if (_isLoading || _product == null) {
+  void _handlePurchase(ProductDetails? product) {
+    if (_isLoading || product == null) {
       _showSnackBar(_userFacingErrorMessage);
       return;
     }
@@ -3219,10 +3263,7 @@ class _PaywallPageState extends State<PaywallPage> {
         _showSnackBar(_userFacingErrorMessage);
         return;
       }
-      final product = _product;
-      if (product != null) {
-        context.read<ContactLensState>().purchasePremium(product);
-      }
+      context.read<ContactLensState>().purchasePremium(product);
     });
   }
 
