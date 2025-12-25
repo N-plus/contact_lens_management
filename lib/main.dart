@@ -1679,13 +1679,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _onExchangeButtonPressed(ContactLensState state) async {
     if (state.showInventory && (state.inventoryCount == null || state.inventoryCount! <= 0)) {
-      final updated = await showInventoryPicker(
-        context,
-        state,
-        isCurrentInventory: true,
+      final shouldExchange = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('在庫がありません'),
+          content: const Text('在庫を減らさずに交換を記録しますか？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('交換する'),
+            ),
+          ],
+        ),
       );
 
-      if (!updated || !mounted) {
+      if (shouldExchange != true || !mounted) {
         return;
       }
     }
