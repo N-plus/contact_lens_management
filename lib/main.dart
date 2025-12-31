@@ -2733,6 +2733,18 @@ class SettingsPage extends StatelessWidget {
                   ],
                 ),
               ),
+              ListTile(
+                leading: Icon(Icons.description_outlined, color: themeColor),
+                title: const Text('利用規約'),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                onTap: () => _openTermsPage(context),
+              ),
+              ListTile(
+                leading: Icon(Icons.privacy_tip_outlined, color: themeColor),
+                title: const Text('プライバシーポリシー'),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                onTap: () => _openPrivacyPolicyPage(context),
+              ),
               const SizedBox(height: 32),
             ],
           ),
@@ -2750,6 +2762,18 @@ class SettingsPage extends StatelessWidget {
   Future<void> _openSubscriptionExplanation(BuildContext context) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const SubscriptionExplanationPage()),
+    );
+  }
+
+  Future<void> _openTermsPage(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const TermsPage()),
+    );
+  }
+
+  Future<void> _openPrivacyPolicyPage(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
     );
   }
 
@@ -3189,6 +3213,32 @@ class SubscriptionExplanationPage extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              Text(
+                'サブスクリプションの内容と併せて、以下の規約もご確認ください。',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 12),
+              _PolicyLinkTile(
+                icon: Icons.description_outlined,
+                title: '利用規約',
+                color: themeColor,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const TermsPage()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _PolicyLinkTile(
+                icon: Icons.privacy_tip_outlined,
+                title: 'プライバシーポリシー',
+                color: themeColor,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PrivacyPolicyPage()),
+                ),
+              ),
               if (showProceedAction) ...[
                 const Spacer(),
                 SizedBox(
@@ -3204,6 +3254,219 @@ class SubscriptionExplanationPage extends StatelessWidget {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TermsPage extends StatelessWidget {
+  const TermsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = Theme.of(context).colorScheme.primary;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget bullet(String text) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('• '),
+            Expanded(
+              child: Text(
+                text,
+                style: textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('利用規約'),
+        backgroundColor: themeColor,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '本規約は、個人開発アプリ「コンタクト交換管理」（以下「本アプリ」）の利用条件を定めるものです。本アプリを利用することで、本規約に同意したものとみなします。',
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                '第1条（利用について）',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリは、コンタクトレンズ交換時期の管理を支援する目的で提供されます。'),
+              bullet('利用に必要な通信費は利用者の負担となります。'),
+              const SizedBox(height: 16),
+              Text(
+                '第2条（サブスクリプション）',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリの一部機能はサブスクリプションとして提供され、月額プランと年額プランをご用意しています。'),
+              bullet('購入確定時にご利用のApple IDに課金されます。'),
+              bullet('サブスクリプションは期間終了時に自動更新され、更新処理はAppleが行います。'),
+              bullet('自動更新の停止や解約は、期間終了日の24時間前までにApple IDの設定画面から行ってください。'),
+              bullet('無料トライアルを提供する場合、トライアル終了後に自動的に課金が開始されます。'),
+              bullet('価格や提供内容は予告なく変更されることがあります。変更後も利用を継続した場合、変更に同意したものとみなします。'),
+              const SizedBox(height: 16),
+              Text(
+                '第3条（免責）',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリの利用により生じたいかなる損害についても、開発者は責任を負いません。'),
+              bullet('通知や記録の精度を保証するものではなく、最終的な確認は利用者自身の責任で行ってください。'),
+              const SizedBox(height: 16),
+              Text(
+                '第4条（禁止事項）',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリのリバースエンジニアリング、再配布、商用利用を禁止します。'),
+              bullet('本アプリを利用した不正行為や公序良俗に反する行為を禁止します。'),
+              const SizedBox(height: 16),
+              Text(
+                '第5条（準拠法）',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本規約は日本法を準拠法とし、本アプリに関する紛争は開発者の所在地を管轄する裁判所を第一審の専属的合意管轄とします。'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class PrivacyPolicyPage extends StatelessWidget {
+  const PrivacyPolicyPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = Theme.of(context).colorScheme.primary;
+    final textTheme = Theme.of(context).textTheme;
+
+    Widget bullet(String text) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('• '),
+            Expanded(
+              child: Text(
+                text,
+                style: textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('プライバシーポリシー'),
+        backgroundColor: themeColor,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '本プライバシーポリシーは、本アプリが取り扱う情報とその管理方針について定めるものです。利用者は本アプリを使用することで、本ポリシーに同意したものとみなします。',
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'データの取り扱い',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリは氏名・メールアドレスなどの個人情報を外部に送信しません。'),
+              bullet('アプリで入力・作成されたデータは、端末内のみに保存され、サーバー等へ送信されることはありません。'),
+              bullet('外部サービス（Firebase、Analytics など）を利用していないため、利用者の行動データを収集することもありません。'),
+              const SizedBox(height: 16),
+              Text(
+                '通知について',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              bullet('本アプリではローカル通知を使用し、交換日や在庫に関するリマインドを端末上で表示します。'),
+              bullet('通知の利用には端末から通知権限の付与が必要です。設定からいつでも変更できます。'),
+              const SizedBox(height: 16),
+              Text(
+                'お問い合わせ',
+                style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '本ポリシーに関するご質問は、アプリストアのサポート欄からご連絡ください。',
+                style: textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PolicyLinkTile extends StatelessWidget {
+  const _PolicyLinkTile({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.grey[100],
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, color: color),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey[500]),
             ],
           ),
         ),
