@@ -2643,6 +2643,14 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const Divider(height: 32),
               ],
+              _buildSectionHeader('サブスクリプション'),
+              ListTile(
+                leading: Icon(Icons.info_outline, color: themeColor),
+                title: const Text('サブスクリプションの説明'),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                onTap: () => _openSubscriptionExplanation(context),
+              ),
+              const Divider(height: 32),
               _buildSectionHeader('自動更新'),
               _buildSwitchTile(
                 title: '自動スケジュール更新',
@@ -2736,6 +2744,12 @@ class SettingsPage extends StatelessWidget {
   Future<void> _showPaywall(BuildContext context) async {
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const PaywallPage()),
+    );
+  }
+
+  Future<void> _openSubscriptionExplanation(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SubscriptionExplanationPage()),
     );
   }
 
@@ -3115,6 +3129,89 @@ class PaywallPage extends StatefulWidget {
   State<PaywallPage> createState() => _PaywallPageState();
 }
 
+class SubscriptionExplanationPage extends StatelessWidget {
+  const SubscriptionExplanationPage({
+    super.key,
+    this.showProceedAction = false,
+  });
+
+  final bool showProceedAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final themeColor = Theme.of(context).colorScheme.primary;
+    const explanations = [
+      '一部の機能はサブスクリプションで提供されます',
+      '月額プラン / 年額プランがあること',
+      '購入確定時に Apple ID に課金されること',
+      'サブスクリプションは自動更新されること',
+      '解約は Apple ID の設定画面から行えること',
+      '無料トライアルがある場合、期間終了後に課金されること',
+    ];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('サブスクリプションについて'),
+        backgroundColor: themeColor,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ご確認ください',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'サブスクリプション購入前に、以下の内容をご確認ください。',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              ...explanations.map(
+                (text) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('• '),
+                      Expanded(
+                        child: Text(
+                          text,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (showProceedAction) ...[
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: themeColor,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('内容を確認しました'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PaywallPageState extends State<PaywallPage> {
   bool _isLoading = true;
   String? _error;
@@ -3310,18 +3407,28 @@ class _PaywallPageState extends State<PaywallPage> {
     );
   }
 
-  void _handlePurchase(ProductDetails? product) {
+  Future<void> _handlePurchase(ProductDetails? product) async {
     if (_isLoading || product == null) {
       _showSnackBar(_userFacingErrorMessage);
       return;
     }
-    InAppPurchase.instance.isAvailable().then((isAvailable) {
-      if (!isAvailable) {
-        _showSnackBar(_userFacingErrorMessage);
-        return;
-      }
-      context.read<ContactLensState>().purchasePremium(product);
-    });
+
+    final confirmed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => const SubscriptionExplanationPage(showProceedAction: true),
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final isAvailable = await InAppPurchase.instance.isAvailable();
+    if (!isAvailable) {
+      _showSnackBar(_userFacingErrorMessage);
+      return;
+    }
+    context.read<ContactLensState>().purchasePremium(product);
   }
 
   void _handleRestore() {
