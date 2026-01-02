@@ -1697,7 +1697,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icons.settings,
                       color: Colors.black87,
                     ),
-                    onPressed: () {
+                    onPressed: () async {
+                      if (state.soundEnabled) {
+                        await _audioPlayer.play(
+                          AssetSource('sounds/決定ボタンを押す50.mp3'),
+                        );
+                      }
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const SettingsPage(),
