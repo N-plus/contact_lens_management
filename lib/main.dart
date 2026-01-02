@@ -262,6 +262,8 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
       final selected = _selectedStartDate ?? DateTime.now();
       await state.setCycleLength(ContactLensState.twoWeekCycle);
       await state.recordExchangeOn(selected);
+    } else {
+      await state.markUsageNotStarted();
     }
 
     await state.dismissInitialOnboarding();
@@ -276,6 +278,7 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
+    await state.markUsageNotStarted();
     await state.dismissInitialOnboarding();
 
     if (mounted) {
@@ -416,13 +419,14 @@ class ContactProfile {
     required this.inventoryThreshold,
     required this.soundEnabled,
     required this.isRegistered,
+    required this.hasStarted,
   });
 
   factory ContactProfile.primaryDefaults() => ContactProfile(
         name: 'コンタクト1',
         lensType: 'コンタクト',
         cycleLength: 14,
-        startDate: DateTime.now(),
+        startDate: null,
         autoSchedule: true,
         notifyDayBefore: true,
         notifyDayBeforeTime: const TimeOfDay(hour: 20, minute: 0),
@@ -436,13 +440,14 @@ class ContactProfile {
         inventoryThreshold: 2,
         soundEnabled: true,
         isRegistered: true,
+        hasStarted: false,
       );
 
   factory ContactProfile.secondaryPlaceholder() => ContactProfile(
         name: 'コンタクト2',
         lensType: 'コンタクト',
         cycleLength: 14,
-        startDate: DateTime.now(),
+        startDate: null,
         autoSchedule: true,
         notifyDayBefore: true,
         notifyDayBeforeTime: const TimeOfDay(hour: 20, minute: 0),
@@ -456,12 +461,13 @@ class ContactProfile {
         inventoryThreshold: 2,
         soundEnabled: true,
         isRegistered: false,
+        hasStarted: false,
       );
 
   final String name;
   final String lensType;
   final int cycleLength;
-  final DateTime startDate;
+  final DateTime? startDate;
   final bool autoSchedule;
   final bool notifyDayBefore;
   final TimeOfDay notifyDayBeforeTime;
@@ -475,6 +481,7 @@ class ContactProfile {
   final int inventoryThreshold;
   final bool soundEnabled;
   final bool isRegistered;
+  final bool hasStarted;
 
   ContactProfile copyWith({
     String? name,
@@ -494,6 +501,7 @@ class ContactProfile {
     int? inventoryThreshold,
     bool? soundEnabled,
     bool? isRegistered,
+    bool? hasStarted,
   }) {
     return ContactProfile(
       name: name ?? this.name,
@@ -513,6 +521,7 @@ class ContactProfile {
       inventoryThreshold: inventoryThreshold ?? this.inventoryThreshold,
       soundEnabled: soundEnabled ?? this.soundEnabled,
       isRegistered: isRegistered ?? this.isRegistered,
+      hasStarted: hasStarted ?? this.hasStarted,
     );
   }
 
@@ -521,7 +530,7 @@ class ContactProfile {
       'name': name,
       'lensType': lensType,
       'cycleLength': cycleLength,
-      'startDate': startDate.millisecondsSinceEpoch,
+      'startDate': startDate?.millisecondsSinceEpoch,
       'autoSchedule': autoSchedule,
       'notifyDayBefore': notifyDayBefore,
       'notifyDayBeforeTime': notifyDayBeforeTime.hour * 60 + notifyDayBeforeTime.minute,
@@ -536,6 +545,7 @@ class ContactProfile {
       'inventoryThreshold': inventoryThreshold,
       'soundEnabled': soundEnabled,
       'isRegistered': isRegistered,
+      'hasStarted': hasStarted,
     };
   }
 
@@ -548,9 +558,9 @@ class ContactProfile {
       name: map['name'] as String? ?? 'コンタクト1',
       lensType: map['lensType'] as String? ?? 'コンタクト',
       cycleLength: map['cycleLength'] as int? ?? 14,
-      startDate: DateTime.fromMillisecondsSinceEpoch(
-        map['startDate'] as int? ?? DateTime.now().millisecondsSinceEpoch,
-      ),
+      startDate: (map['startDate'] as int?) != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int)
+          : null,
       autoSchedule: map['autoSchedule'] as bool? ?? true,
       notifyDayBefore: map['notifyDayBefore'] as bool? ?? true,
       notifyDayBeforeTime: _timeFromMinutes(
@@ -573,11 +583,12 @@ class ContactProfile {
       inventoryThreshold: map['inventoryThreshold'] as int? ?? 2,
       soundEnabled: map['soundEnabled'] as bool? ?? true,
       isRegistered: map['isRegistered'] as bool? ?? true,
+      hasStarted: map['hasStarted'] as bool? ?? true,
     );
   }
 
   ContactProfile autoAdvanced(DateTime today) {
-    if (!autoSchedule) {
+    if (!autoSchedule || startDate == null || !hasStarted) {
       return this;
     }
 
@@ -724,8 +735,9 @@ class ContactLensState extends ChangeNotifier {
   String profileLensType(int index) => _profiles[index].lensType;
 
   int get cycleLength => _profile.cycleLength;
-  DateTime get startDate => _profile.startDate;
-  DateTime get exchangeDate => _profile.startDate.add(Duration(days: _profile.cycleLength));
+  bool get hasStarted => _profile.startDate != null && _profile.hasStarted;
+  DateTime? get startDate => hasStarted ? _profile.startDate : null;
+  DateTime? get exchangeDate => startDate?.add(Duration(days: _profile.cycleLength));
   bool get autoSchedule => _profile.autoSchedule;
   bool get notifyDayBefore => _profile.notifyDayBefore;
   TimeOfDay get notifyDayBeforeTime => _profile.notifyDayBeforeTime;
@@ -757,26 +769,35 @@ class ContactLensState extends ChangeNotifier {
   Color colorForIndex(int index) => _colorWithDefaultOpacity(index);
 
   int get remainingDays {
+    if (exchangeDate == null) {
+      return 0;
+    }
     final today = _today();
-    final exchange = _dateOnly(exchangeDate);
+    final exchange = _dateOnly(exchangeDate!);
     final diff = exchange.difference(today).inDays;
     return diff > 0 ? diff : 0;
   }
 
   int get overdueDays {
+    if (exchangeDate == null) {
+      return 0;
+    }
     final today = _today();
-    final exchange = _dateOnly(exchangeDate);
+    final exchange = _dateOnly(exchangeDate!);
     final diff = today.difference(exchange).inDays;
     return diff > 0 ? diff : 0;
   }
 
   double get progress {
+    if (startDate == null) {
+      return 0;
+    }
     final total = _profile.cycleLength;
     if (total == 0) {
       return 0;
     }
     final today = _today();
-    final elapsed = today.difference(_dateOnly(_profile.startDate)).inDays;
+    final elapsed = today.difference(_dateOnly(startDate!)).inDays;
     final clamped = elapsed.clamp(0, total).toDouble();
     return clamped / total;
   }
@@ -798,13 +819,28 @@ class ContactLensState extends ChangeNotifier {
 
   Future<void> recordExchangeToday() async {
     await _updateProfile(
-      (current) => current.copyWith(startDate: DateTime.now()),
+      (current) => current.copyWith(
+        startDate: DateTime.now(),
+        hasStarted: true,
+      ),
     );
   }
 
   Future<void> recordExchangeOn(DateTime start) async {
     await _updateProfile(
-      (current) => current.copyWith(startDate: DateTime(start.year, start.month, start.day)),
+      (current) => current.copyWith(
+        startDate: DateTime(start.year, start.month, start.day),
+        hasStarted: true,
+      ),
+    );
+  }
+
+  Future<void> markUsageNotStarted() async {
+    await _updateProfile(
+      (current) => current.copyWith(
+        startDate: null,
+        hasStarted: false,
+      ),
     );
   }
 
@@ -813,9 +849,16 @@ class ContactLensState extends ChangeNotifier {
   }
 
   Future<void> shiftStartDateByDays(int days) async {
-    final current = _dateOnly(_profile.startDate);
+    if (startDate == null) {
+      await recordExchangeToday();
+      return;
+    }
+    final current = _dateOnly(startDate!);
     await _updateProfile(
-      (profile) => profile.copyWith(startDate: current.add(Duration(days: days))),
+      (profile) => profile.copyWith(
+        startDate: current.add(Duration(days: days)),
+        hasStarted: true,
+      ),
     );
   }
 
@@ -1099,6 +1142,7 @@ class ContactLensState extends ChangeNotifier {
       inventoryThreshold: _prefs?.getInt(_inventoryThresholdKey) ?? 2,
       soundEnabled: _prefs?.getBool(_soundEnabledKey) ?? true,
       isRegistered: true,
+      hasStarted: true,
     );
   }
 
@@ -1168,7 +1212,11 @@ class ContactLensState extends ChangeNotifier {
     await _notificationsPlugin.cancel(_dayOfNotificationId);
     await _notificationsPlugin.cancel(_inventoryAlertNotificationId);
 
-    final exchange = exchangeDate;
+    if (exchangeDate == null) {
+      return;
+    }
+
+    final exchange = exchangeDate!;
     final now = tz.TZDateTime.now(tz.local);
 
     if (_profile.inventoryAlertEnabled &&
@@ -1328,11 +1376,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysOverdue = state.overdueDays;
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
+    final hasStarted = state.hasStarted;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final start = DateTime(startDate.year, startDate.month, startDate.day);
-    final isBeforeStart = start.isAfter(today);
-    final shouldShowExpiredWarning = !isBeforeStart && isOverdue;
+    final start = startDate != null
+        ? DateTime(startDate.year, startDate.month, startDate.day)
+        : null;
+    final isBeforeStart = start != null && start.isAfter(today);
+    final shouldShowExpiredWarning = hasStarted && !isBeforeStart && isOverdue;
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
     final showSecondProfile = state.showSecondProfile;
@@ -1525,10 +1576,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           ],
                                                         ),
                                                       const SizedBox(height: 4),
-                                                      if (!shouldShowExpiredWarning)
+                                                      if (startDate != null &&
+                                                          exchangeDate != null &&
+                                                          !shouldShowExpiredWarning)
                                                         Text(
                                                           '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
                                                           style: const TextStyle(
+                                                            fontSize: 16,
+                                                            color: Colors.grey,
+                                                          ),
+                                                        ),
+                                                      if (startDate == null)
+                                                        const Text(
+                                                          '開始日が未設定です',
+                                                          style: TextStyle(
                                                             fontSize: 16,
                                                             color: Colors.grey,
                                                           ),
@@ -3023,7 +3084,10 @@ class SettingsPage extends StatelessWidget {
     return '$hour:$minute';
   }
 
-  String _formatSimpleDate(DateTime date) {
+  String _formatSimpleDate(DateTime? date) {
+    if (date == null) {
+      return '未設定';
+    }
     final y = date.year.toString().padLeft(4, '0');
     final m = date.month.toString().padLeft(2, '0');
     final d = date.day.toString().padLeft(2, '0');
