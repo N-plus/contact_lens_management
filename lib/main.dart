@@ -592,7 +592,7 @@ class ContactProfile {
       return this;
     }
 
-    var start = _dateOnly(startDate);
+    var start = _dateOnly(startDate!);
     var nextExchange = start.add(Duration(days: cycleLength));
 
     while (!today.isBefore(nextExchange)) {
@@ -600,7 +600,7 @@ class ContactProfile {
       nextExchange = start.add(Duration(days: cycleLength));
     }
 
-    if (start != _dateOnly(startDate)) {
+    if (start != _dateOnly(startDate!)) {
       return copyWith(startDate: start);
     }
     return this;
@@ -1368,22 +1368,23 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
-    final isOverdue = state.overdueDays > 0;
-    final Color mainColor = isOverdue ? overdueColor : themeColor;
-    final Color fadedColor = mainColor.withOpacity(0.2);
-    final cycleLabel = state.cycleLabel;
-    final daysRemaining = state.remainingDays;
-    final daysOverdue = state.overdueDays;
-    final startDate = state.startDate;
-    final exchangeDate = state.exchangeDate;
-    final hasStarted = state.hasStarted;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final startDate = state.startDate;
+    final exchangeDate = state.exchangeDate;
     final start = startDate != null
         ? DateTime(startDate.year, startDate.month, startDate.day)
         : null;
     final isBeforeStart = start != null && start.isAfter(today);
-    final shouldShowExpiredWarning = hasStarted && !isBeforeStart && isOverdue;
+    final shouldShowUsageNotStarted = startDate == null || isBeforeStart;
+    final daysRemaining =
+        shouldShowUsageNotStarted ? 0 : state.remainingDays;
+    final daysOverdue = shouldShowUsageNotStarted ? 0 : state.overdueDays;
+    final isOverdue = daysOverdue > 0;
+    final Color mainColor = isOverdue ? overdueColor : themeColor;
+    final Color fadedColor = mainColor.withOpacity(0.2);
+    final cycleLabel = state.cycleLabel;
+    final shouldShowExpiredWarning = !shouldShowUsageNotStarted && isOverdue;
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
     final showSecondProfile = state.showSecondProfile;
@@ -1486,7 +1487,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                           child: TweenAnimationBuilder<double>(
                                             tween: Tween<double>(
                                               begin: 0,
-                                              end: state.progress,
+                                              end: shouldShowUsageNotStarted
+                                                  ? 0
+                                                  : state.progress,
                                             ),
                                             duration: const Duration(milliseconds: 400),
                                             curve: Curves.easeInOut,
@@ -1504,7 +1507,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     mainAxisAlignment: MainAxisAlignment.center,
                                                     crossAxisAlignment: CrossAxisAlignment.center,
                                                     children: [
-                                                      if (isBeforeStart)
+                                                      if (shouldShowUsageNotStarted)
                                                         Text(
                                                           '使用開始前です',
                                                           style: TextStyle(
