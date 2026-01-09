@@ -11,16 +11,18 @@ class ReviewService {
   ///
   /// requestReview() はApple側の判断で表示されない場合があります。
   /// （例: 頻繁な表示、評価数上限、OS側の条件など）
-  Future<void> requestReview() async {
+  Future<bool> requestReview() async {
     try {
       final isAvailable = await _inAppReview.isAvailable();
       if (!isAvailable) {
-        return;
+        return false;
       }
       await _inAppReview.requestReview();
+      return true;
     } catch (error, stackTrace) {
       debugPrint('Failed to request review: $error');
       debugPrintStack(stackTrace: stackTrace);
+      return false;
     }
   }
 

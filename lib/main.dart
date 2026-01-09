@@ -10,6 +10,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'review_service.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -2805,6 +2807,22 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              ListTile(
+                leading: Icon(Icons.star_rate_rounded, color: themeColor),
+                title: const Text('アプリを評価する'),
+                subtitle: const Text('レビューを書いて応援してください'),
+                onTap: () async {
+                  final didRequest = await ReviewService().requestReview();
+                  if (!didRequest) {
+                    await Future.delayed(const Duration(seconds: 1));
+                    if (!context.mounted) {
+                      return;
+                    }
+                    await ReviewService()
+                        .openStorePage(appStoreId: '6756917635');
+                  }
+                },
               ),
               ListTile(
                 leading: Icon(Icons.description_outlined, color: themeColor),
