@@ -1076,6 +1076,8 @@ class ContactLensState extends ChangeNotifier {
           (purchase.status == PurchaseStatus.purchased ||
               purchase.status == PurchaseStatus.restored)) {
         unawaited(setPremium(true));
+        // 購入完了後など、ユーザーが価値を感じたタイミングでレビュー表示を検討する例。
+        // ReviewService().requestReview();
       }
       if (purchase.pendingCompletePurchase) {
         _inAppPurchase.completePurchase(purchase);
@@ -2397,6 +2399,8 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 例: 設定画面のボタンから手動でレビュー導線を用意する場合
+    // ReviewService().openStorePage(appStoreId: '123456789');
     return Consumer<ContactLensState>(
       builder: (context, state, _) {
         final cyclePeriod = state.cycleLength == ContactLensState.oneDayCycle
