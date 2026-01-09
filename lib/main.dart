@@ -2808,6 +2808,14 @@ class SettingsPage extends StatelessWidget {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: Colors.grey.withOpacity(0.3),
+                ),
+              ),
               ListTile(
                 leading: Icon(Icons.star_rate_rounded, color: themeColor),
                 title: const Text('アプリを評価する'),
