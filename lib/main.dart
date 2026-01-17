@@ -1758,15 +1758,12 @@ class _HomeScreenState extends State<HomeScreen> {
             if (shouldShowEmptyState)
               IgnorePointer(
                 child: Center(
-                  child: Opacity(
-                    opacity: 0.4,
-                    child: Transform.translate(
-                      offset: const Offset(0, -32),
-                      child: Image.asset(
-                        'assets/icons/app_icon_empty_state.png',
-                        width: 180,
-                        height: 180,
-                      ),
+                  child: Transform.translate(
+                    offset: const Offset(0, -32),
+                    child: Image.asset(
+                      'assets/icons/app_icon_empty_state.png',
+                      width: 180,
+                      height: 180,
                     ),
                   ),
                 ),
