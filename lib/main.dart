@@ -2656,7 +2656,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
               ],
-              _buildSectionHeader('コンタクトの在庫'),
+              _buildSectionHeader('コンタクト在庫の管理'),
               if (!state.shouldShowInventoryOnboarding) ...[
                 _buildSwitchTile(
                   title: '在庫数を表示',
