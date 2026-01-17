@@ -120,9 +120,22 @@ class InitialOnboardingScreen extends StatefulWidget {
 }
 
 class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
-  bool? _usesTwoWeekLens;
+  LensUsageType? _selectedUsageType;
   DateTime? _selectedStartDate;
   bool _isProcessing = false;
+
+  bool get _needsStartDate =>
+      _selectedUsageType == LensUsageType.twoWeek ||
+      _selectedUsageType == LensUsageType.oneMonth;
+
+  void _selectUsageType(LensUsageType type) {
+    setState(() {
+      _selectedUsageType = type;
+      if (!_needsStartDate) {
+        _selectedStartDate = null;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,16 +155,9 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '今使っているレンズの状況を教えてください',
+                '普段使っているコンタクトレンズの種類を教えてください',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '現在、2weekタイプのコンタクトレンズを使用していますか？',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
                     ),
               ),
               const SizedBox(height: 12),
@@ -160,21 +166,33 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                 runSpacing: 12,
                 children: [
                   _SelectionChip(
-                    label: 'はい',
-                    isSelected: _usesTwoWeekLens == true,
+                    label: '2ウィークタイプ',
+                    isSelected: _selectedUsageType == LensUsageType.twoWeek,
                     color: accentColor,
-                    onTap: () => setState(() => _usesTwoWeekLens = true),
+                    onTap: () => _selectUsageType(LensUsageType.twoWeek),
                   ),
                   _SelectionChip(
-                    label: 'いいえ',
-                    isSelected: _usesTwoWeekLens == false,
+                    label: 'ワンデイタイプ',
+                    isSelected: _selectedUsageType == LensUsageType.oneDay,
                     color: accentColor,
-                    onTap: () => setState(() => _usesTwoWeekLens = false),
+                    onTap: () => _selectUsageType(LensUsageType.oneDay),
+                  ),
+                  _SelectionChip(
+                    label: '1ヶ月（マンスリー）タイプ',
+                    isSelected: _selectedUsageType == LensUsageType.oneMonth,
+                    color: accentColor,
+                    onTap: () => _selectUsageType(LensUsageType.oneMonth),
+                  ),
+                  _SelectionChip(
+                    label: 'スキップ（従来通り）',
+                    isSelected: _selectedUsageType == LensUsageType.skip,
+                    color: accentColor,
+                    onTap: () => _selectUsageType(LensUsageType.skip),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              if (_usesTwoWeekLens == true) ...[
+              if (_needsStartDate) ...[
                 Text(
                   '使用開始日',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -206,7 +224,7 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed:
-                      _isProcessing || _usesTwoWeekLens == null ? null : _save,
+                      _isProcessing || _selectedUsageType == null ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
                     foregroundColor: Colors.white,
@@ -222,13 +240,6 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                     ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: _isProcessing ? null : _skip,
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey[700],
-                ),
-                child: const Text('スキップ'),
               ),
             ],
           ),
@@ -255,32 +266,31 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
 
   Future<void> _save() async {
     if (_isProcessing) return;
+    if (_selectedUsageType == null) return;
     setState(() => _isProcessing = true);
 
     final state = context.read<ContactLensState>();
-    final useTwoWeek = _usesTwoWeekLens ?? false;
 
-    if (useTwoWeek) {
-      final selected = _selectedStartDate ?? DateTime.now();
-      await state.setCycleLength(ContactLensState.twoWeekCycle);
-      await state.recordExchangeOn(selected);
-    } else {
-      await state.markUsageNotStarted();
+    switch (_selectedUsageType!) {
+      case LensUsageType.twoWeek:
+        final selected = _selectedStartDate ?? DateTime.now();
+        await state.setCycleLength(ContactLensState.twoWeekCycle);
+        await state.recordExchangeOn(selected);
+        break;
+      case LensUsageType.oneMonth:
+        final selected = _selectedStartDate ?? DateTime.now();
+        await state.setCycleLength(ContactLensState.oneMonthCycle);
+        await state.recordExchangeOn(selected);
+        break;
+      case LensUsageType.oneDay:
+        await state.setCycleLength(ContactLensState.oneDayCycle);
+        await state.recordExchangeOn(DateTime.now());
+        break;
+      case LensUsageType.skip:
+        await state.markUsageNotStarted();
+        break;
     }
 
-    await state.dismissInitialOnboarding();
-
-    if (mounted) {
-      setState(() => _isProcessing = false);
-    }
-  }
-
-  Future<void> _skip() async {
-    if (_isProcessing) return;
-    setState(() => _isProcessing = true);
-
-    final state = context.read<ContactLensState>();
-    await state.markUsageNotStarted();
     await state.dismissInitialOnboarding();
 
     if (mounted) {
@@ -288,6 +298,8 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
     }
   }
 }
+
+enum LensUsageType { twoWeek, oneDay, oneMonth, skip }
 
 class InventoryOnboardingScreen extends StatefulWidget {
   const InventoryOnboardingScreen({super.key});
