@@ -1427,8 +1427,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
     final startDate = state.startDate;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final exchangeDate = state.exchangeDate;
-    final shouldShowUsageNotStarted = !state.hasStarted;
+    final shouldShowUsageNotStarted =
+        startDate == null || startDate.isAfter(today);
     final daysRemaining =
         shouldShowUsageNotStarted ? 0 : state.remainingDays;
     final daysOverdue = shouldShowUsageNotStarted ? 0 : state.overdueDays;
