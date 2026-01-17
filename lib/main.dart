@@ -556,12 +556,21 @@ class ContactProfile {
     final notifyOfMinutes = map['notifyDayOfTime'] as int?;
     final inventoryAlertMinutes = map['inventoryAlertTime'] as int?;
 
+    final startDateMillis = map['startDate'] as int?;
+    final normalizedStartDate = startDateMillis != null
+        ? DateTime.fromMillisecondsSinceEpoch(startDateMillis)
+        : null;
+
     return ContactProfile(
       name: map['name'] as String? ?? 'コンタクト1',
       lensType: map['lensType'] as String? ?? 'コンタクト',
       cycleLength: map['cycleLength'] as int? ?? 14,
-      startDate: (map['startDate'] as int?) != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['startDate'] as int)
+      startDate: normalizedStartDate != null
+          ? DateTime(
+              normalizedStartDate.year,
+              normalizedStartDate.month,
+              normalizedStartDate.day,
+            )
           : null,
       autoSchedule: map['autoSchedule'] as bool? ?? true,
       notifyDayBefore: map['notifyDayBefore'] as bool? ?? true,
@@ -594,10 +603,11 @@ class ContactProfile {
       return this;
     }
 
+    final normalizedToday = _dateOnly(today);
     var start = _dateOnly(startDate!);
     var nextExchange = start.add(Duration(days: cycleLength));
 
-    while (!today.isBefore(nextExchange)) {
+    while (!normalizedToday.isBefore(nextExchange)) {
       start = nextExchange;
       nextExchange = start.add(Duration(days: cycleLength));
     }
@@ -739,7 +749,13 @@ class ContactLensState extends ChangeNotifier {
   int get cycleLength => _profile.cycleLength;
   bool get hasStarted => _profile.startDate != null && _profile.hasStarted;
   DateTime? get startDate => hasStarted ? _profile.startDate : null;
-  DateTime? get exchangeDate => startDate?.add(Duration(days: _profile.cycleLength));
+  DateTime? get exchangeDate {
+    if (startDate == null) {
+      return null;
+    }
+    final normalizedStart = _dateOnly(startDate!);
+    return normalizedStart.add(Duration(days: _profile.cycleLength));
+  }
   bool get autoSchedule => _profile.autoSchedule;
   bool get notifyDayBefore => _profile.notifyDayBefore;
   TimeOfDay get notifyDayBeforeTime => _profile.notifyDayBeforeTime;
@@ -822,7 +838,7 @@ class ContactLensState extends ChangeNotifier {
   Future<void> recordExchangeToday() async {
     await _updateProfile(
       (current) => current.copyWith(
-        startDate: DateTime.now(),
+        startDate: _today(),
         hasStarted: true,
       ),
     );
@@ -1105,9 +1121,11 @@ class ContactLensState extends ChangeNotifier {
 
   Future<ContactProfile> _loadLegacyProfile() async {
     final startMillis = _prefs?.getInt(_startDateKey);
-    final startDate = startMillis != null
+    final rawStartDate = startMillis != null
         ? DateTime.fromMillisecondsSinceEpoch(startMillis)
         : DateTime.now();
+    final startDate =
+        DateTime(rawStartDate.year, rawStartDate.month, rawStartDate.day);
 
     final storedThemeIndex = _prefs?.getInt(_themeColorIndexKey) ?? 0;
     int themeIndex;
