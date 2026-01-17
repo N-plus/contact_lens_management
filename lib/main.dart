@@ -1437,6 +1437,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final daysRemaining = isActive ? state.remainingDays : 0;
     final daysOverdue = isActive ? state.overdueDays : 0;
     final isOverdue = daysOverdue > 0;
+    final isExpired = isActive && daysRemaining <= 0;
+    final shouldShowEmptyState = shouldShowUsageNotStarted || isExpired;
     final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
     final cycleLabel = state.cycleLabel;
@@ -1543,7 +1545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: SizedBox(
                                           width: adjustedChartSize,
                                           height: adjustedChartSize,
-                                          child: isActive
+                                          child: isActive && !isExpired
                                               ? TweenAnimationBuilder<double>(
                                                   tween: Tween<double>(
                                                     begin: 0,
@@ -1658,15 +1660,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                 ),
-                                if (shouldShowUsageNotStarted) ...[
+                                if (shouldShowEmptyState) ...[
                                   const SizedBox(height: 24),
                                   Text(
-                                    isUnconfigured
-                                        ? 'レンズ管理を始めましょう！\n'
-                                            '下の「レンズを交換する」ボタンから\n'
-                                            '最初の交換を記録できます'
-                                        : 'レンズ使用開始予定です！\n'
-                                            '$scheduledStartDateLabelから管理が始まります',
+                                    isExpired
+                                        ? 'レンズの使用期限を過ぎています\n'
+                                            '新しいレンズに交換しましょう！'
+                                        : isUnconfigured
+                                            ? 'レンズ管理を始めましょう！\n'
+                                                '下の「レンズを交換する」ボタンから\n'
+                                                '最初の交換を記録できます'
+                                            : 'レンズ使用開始予定です！\n'
+                                                '$scheduledStartDateLabelから管理が始まります',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 18,
@@ -1750,7 +1755,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
-            if (shouldShowUsageNotStarted)
+            if (shouldShowEmptyState)
               IgnorePointer(
                 child: Center(
                   child: Opacity(
