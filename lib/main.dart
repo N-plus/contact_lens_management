@@ -291,14 +291,20 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
 
     switch (_selectedUsageType!) {
       case LensUsageType.twoWeek:
-        final selected = _selectedStartDate ?? DateTime.now();
         await state.setCycleLength(ContactLensState.twoWeekCycle);
-        await state.recordExchangeOn(selected);
+        if (_selectedStartDate != null) {
+          await state.recordExchangeOn(_selectedStartDate!);
+        } else {
+          await state.markUsageNotStarted();
+        }
         break;
       case LensUsageType.oneMonth:
-        final selected = _selectedStartDate ?? DateTime.now();
         await state.setCycleLength(ContactLensState.oneMonthCycle);
-        await state.recordExchangeOn(selected);
+        if (_selectedStartDate != null) {
+          await state.recordExchangeOn(_selectedStartDate!);
+        } else {
+          await state.markUsageNotStarted();
+        }
         break;
       case LensUsageType.oneDay:
         await state.setCycleLength(ContactLensState.oneDayCycle);
@@ -1422,7 +1428,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final themeColor = state.themeColor;
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
-    final shouldShowUsageNotStarted = startDate == null;
+    final shouldShowUsageNotStarted = !state.hasStarted;
     final daysRemaining =
         shouldShowUsageNotStarted ? 0 : state.remainingDays;
     final daysOverdue = shouldShowUsageNotStarted ? 0 : state.overdueDays;
