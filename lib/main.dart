@@ -1740,6 +1740,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               },
             ),
+            if (shouldShowUsageNotStarted)
+              IgnorePointer(
+                child: Center(
+                  child: Opacity(
+                    opacity: 0.4,
+                    child: Image.asset(
+                      'assets/icons/app_icon_empty_state.png',
+                      width: 72,
+                      height: 72,
+                    ),
+                  ),
+                ),
+              ),
             Positioned(
               top: 10,
               right: 14,
