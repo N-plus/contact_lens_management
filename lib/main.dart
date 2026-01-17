@@ -1430,16 +1430,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final exchangeDate = state.exchangeDate;
-    final shouldShowUsageNotStarted =
-        startDate == null || startDate.isAfter(today);
-    final daysRemaining =
-        shouldShowUsageNotStarted ? 0 : state.remainingDays;
-    final daysOverdue = shouldShowUsageNotStarted ? 0 : state.overdueDays;
+    final isUnconfigured = startDate == null;
+    final isScheduled = startDate != null && startDate.isAfter(today);
+    final isActive = startDate != null && !startDate.isAfter(today);
+    final shouldShowUsageNotStarted = isUnconfigured || isScheduled;
+    final daysRemaining = isActive ? state.remainingDays : 0;
+    final daysOverdue = isActive ? state.overdueDays : 0;
     final isOverdue = daysOverdue > 0;
     final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
     final cycleLabel = state.cycleLabel;
-    final shouldShowExpiredWarning = !shouldShowUsageNotStarted && isOverdue;
+    final shouldShowExpiredWarning = isActive && isOverdue;
+    final scheduledStartDateLabel = startDate == null
+        ? ''
+        : '${startDate.month}月${startDate.day.toString().padLeft(2, '0')}日';
     final chartSize = math.min(MediaQuery.of(context).size.width * 0.8, 320.0);
     final hasSecondProfile = state.hasSecondProfile;
     final showSecondProfile = state.showSecondProfile;
@@ -1539,9 +1543,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: SizedBox(
                                           width: adjustedChartSize,
                                           height: adjustedChartSize,
-                                          child: shouldShowUsageNotStarted
-                                              ? const SizedBox.shrink()
-                                              : TweenAnimationBuilder<double>(
+                                          child: isActive
+                                              ? TweenAnimationBuilder<double>(
                                                   tween: Tween<double>(
                                                     begin: 0,
                                                     end: state.progress,
@@ -1595,60 +1598,49 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                 ],
                                                               )
                                                             else
-                                                              startDate == null
-                                                                  ? Text(
-                                                                      'レンズ使用開始前です',
-                                                                      style: TextStyle(
-                                                                        fontSize: 18,
-                                                                        color: Colors.grey[600],
-                                                                      ),
-                                                                    )
-                                                                  : Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment.center,
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment.end,
-                                                                      children: [
-                                                                        Text(
-                                                                          '交換まで',
-                                                                          style: TextStyle(
-                                                                            fontSize: 18,
-                                                                            color:
-                                                                                Colors.grey[600],
-                                                                          ),
-                                                                        ),
-                                                                        const SizedBox(width: 4),
-                                                                        Text(
-                                                                          isOverdue
-                                                                              ? '$daysOverdue'
-                                                                              : '$daysRemaining',
-                                                                          style: TextStyle(
-                                                                            fontSize: 56,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            color: isOverdue
-                                                                                ? overdueColor
-                                                                                : themeColor,
-                                                                            height: 1,
-                                                                          ),
-                                                                        ),
-                                                                        const SizedBox(width: 4),
-                                                                        Text(
-                                                                          '日',
-                                                                          style: TextStyle(
-                                                                            fontSize: 18,
-                                                                            color:
-                                                                                Colors.grey[600],
-                                                                          ),
-                                                                        ),
-                                                                      ],
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment.center,
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment.end,
+                                                                children: [
+                                                                  Text(
+                                                                    '交換まで',
+                                                                    style: TextStyle(
+                                                                      fontSize: 18,
+                                                                      color: Colors.grey[600],
                                                                     ),
+                                                                  ),
+                                                                  const SizedBox(width: 4),
+                                                                  Text(
+                                                                    isOverdue
+                                                                        ? '$daysOverdue'
+                                                                        : '$daysRemaining',
+                                                                    style: TextStyle(
+                                                                      fontSize: 56,
+                                                                      fontWeight: FontWeight.bold,
+                                                                      color: isOverdue
+                                                                          ? overdueColor
+                                                                          : themeColor,
+                                                                      height: 1,
+                                                                    ),
+                                                                  ),
+                                                                  const SizedBox(width: 4),
+                                                                  Text(
+                                                                    '日',
+                                                                    style: TextStyle(
+                                                                      fontSize: 18,
+                                                                      color: Colors.grey[600],
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             const SizedBox(height: 4),
-                                                            if (startDate != null &&
+                                                            if (isActive &&
                                                                 exchangeDate != null &&
                                                                 !shouldShowExpiredWarning)
                                                               Text(
-                                                                '${formatJapaneseDateWithWeekday(startDate)} ～ ${formatJapaneseDateWithWeekday(exchangeDate)}',
+                                                                '${formatJapaneseDateWithWeekday(startDate!)} ～ ${formatJapaneseDateWithWeekday(exchangeDate!)}',
                                                                 style: const TextStyle(
                                                                   fontSize: 16,
                                                                   color: Colors.grey,
@@ -1659,7 +1651,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       ),
                                                     );
                                                   },
-                                                ),
+                                                )
+                                              : const SizedBox.shrink(),
                                         ),
                                       ),
                                     ],
@@ -1668,9 +1661,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                 if (shouldShowUsageNotStarted) ...[
                                   const SizedBox(height: 24),
                                   Text(
-                                    'レンズ管理を始めましょう！\n'
-                                    '下の「レンズを交換する」ボタンから\n'
-                                    '最初の交換を記録できます',
+                                    isUnconfigured
+                                        ? 'レンズ管理を始めましょう！\n'
+                                            '下の「レンズを交換する」ボタンから\n'
+                                            '最初の交換を記録できます'
+                                        : 'レンズ使用開始予定です\n'
+                                            '$scheduledStartDateLabelから管理が始まります',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 18,
