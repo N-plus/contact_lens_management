@@ -1537,20 +1537,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                           width: adjustedChartSize,
                                           height: adjustedChartSize,
                                           child: shouldShowUsageNotStarted
-                                              ? Center(
-                                                  child: Text(
-                                                    'レンズ管理を始めましょう！\n'
-                                                    '下の「レンズを交換する」ボタンから\n'
-                                                    '最初の交換を記録できます',
-                                                    textAlign: TextAlign.center,
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: themeColor,
-                                                      height: 1.5,
-                                                    ),
-                                                  ),
-                                                )
+                                              ? const SizedBox.shrink()
                                               : TweenAnimationBuilder<double>(
                                                   tween: Tween<double>(
                                                     begin: 0,
@@ -1664,7 +1651,23 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 32),
+                                if (shouldShowUsageNotStarted) ...[
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'レンズ管理を始めましょう！\n'
+                                    '下の「レンズを交換する」ボタンから\n'
+                                    '最初の交換を記録できます',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: themeColor,
+                                      height: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ] else
+                                  const SizedBox(height: 32),
                                 SizedBox(
                                   width: double.infinity,
                                   height: 56,
