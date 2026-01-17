@@ -1747,8 +1747,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     opacity: 0.4,
                     child: Image.asset(
                       'assets/icons/app_icon_empty_state.png',
-                      width: 128,
-                      height: 128,
+                      width: 180,
+                      height: 180,
                     ),
                   ),
                 ),
