@@ -1420,15 +1420,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final startDate = state.startDate;
     final exchangeDate = state.exchangeDate;
-    final start = startDate != null
-        ? DateTime(startDate.year, startDate.month, startDate.day)
-        : null;
-    final isBeforeStart = start != null && start.isAfter(today);
-    final shouldShowUsageNotStarted = startDate == null || isBeforeStart;
+    final shouldShowUsageNotStarted = startDate == null;
     final daysRemaining =
         shouldShowUsageNotStarted ? 0 : state.remainingDays;
     final daysOverdue = shouldShowUsageNotStarted ? 0 : state.overdueDays;
