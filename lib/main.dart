@@ -2692,7 +2692,7 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ),
                   ListTile(
-                    title: const Text('お知らせ基準'),
+                    title: const Text('在庫アラート基準'),
                     subtitle: Text('${state.inventoryThreshold} 個以下で通知'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -4095,7 +4095,7 @@ Future<bool> showInventoryPicker(
                     child: const Text('キャンセル'),
                   ),
                   Text(
-                    isCurrentInventory ? '現在の在庫' : 'お知らせ基準',
+                    isCurrentInventory ? '現在の在庫' : '在庫アラート基準',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
