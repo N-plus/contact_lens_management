@@ -1665,7 +1665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ? 'レンズ管理を始めましょう！\n'
                                             '下の「レンズを交換する」ボタンから\n'
                                             '最初の交換を記録できます'
-                                        : 'レンズ使用開始予定です\n'
+                                        : 'レンズ使用開始予定です！\n'
                                             '$scheduledStartDateLabelから管理が始まります',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
