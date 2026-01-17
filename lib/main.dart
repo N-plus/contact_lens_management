@@ -2625,7 +2625,7 @@ class SettingsPage extends StatelessWidget {
                 ),
               _buildSwitchTile(
                 title: '在庫アラート通知',
-                subtitle: 'お知らせ基準以下＆交換まで3日で通知',
+                subtitle: '交換前に、在庫が少なくなったら通知',
                 value: state.notifyInventoryAlert,
                 activeColor: themeColor,
                 onChanged: (value) {
