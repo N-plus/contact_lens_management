@@ -166,28 +166,22 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                 runSpacing: 12,
                 children: [
                   _SelectionChip(
-                    label: '2ウィークタイプ',
+                    label: '2week',
                     isSelected: _selectedUsageType == LensUsageType.twoWeek,
                     color: accentColor,
                     onTap: () => _selectUsageType(LensUsageType.twoWeek),
                   ),
                   _SelectionChip(
-                    label: 'ワンデイタイプ',
+                    label: '1day',
                     isSelected: _selectedUsageType == LensUsageType.oneDay,
                     color: accentColor,
                     onTap: () => _selectUsageType(LensUsageType.oneDay),
                   ),
                   _SelectionChip(
-                    label: '1ヶ月（マンスリー）タイプ',
+                    label: '1month',
                     isSelected: _selectedUsageType == LensUsageType.oneMonth,
                     color: accentColor,
                     onTap: () => _selectUsageType(LensUsageType.oneMonth),
-                  ),
-                  _SelectionChip(
-                    label: 'スキップ（従来通り）',
-                    isSelected: _selectedUsageType == LensUsageType.skip,
-                    color: accentColor,
-                    onTap: () => _selectUsageType(LensUsageType.skip),
                   ),
                 ],
               ),
@@ -223,8 +217,7 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed:
-                      _isProcessing || _selectedUsageType == null ? null : _save,
+                  onPressed: _isProcessing ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accentColor,
                     foregroundColor: Colors.white,
@@ -239,6 +232,20 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: TextButton(
+                  onPressed: _isProcessing
+                      ? null
+                      : () {
+                          setState(() {
+                            _selectedUsageType = LensUsageType.skip;
+                          });
+                          _save();
+                        },
+                  child: const Text('スキップ'),
                 ),
               ),
             ],
