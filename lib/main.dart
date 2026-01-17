@@ -253,6 +253,9 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                           });
                           _save();
                         },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blueGrey,
+                  ),
                   child: const Text('スキップ'),
                 ),
               ),
