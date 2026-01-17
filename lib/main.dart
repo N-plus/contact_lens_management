@@ -2705,7 +2705,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                   ListTile(
                     title: const Text('在庫アラート基準'),
-                    subtitle: Text('${state.inventoryThreshold} 個以下で通知'),
+                    subtitle: Text('${state.inventoryThreshold} 個以下でお知らせ'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
