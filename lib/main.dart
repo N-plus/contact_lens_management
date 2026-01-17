@@ -1254,7 +1254,7 @@ class ContactLensState extends ChangeNotifier {
         await _notificationsPlugin.zonedSchedule(
           _inventoryAlertNotificationId,
           '在庫アラート',
-          '在庫がお知らせ基準以下です。交換まであと3日です',
+          '交換まであと3日です。準備をしておきましょう',
           scheduled,
           const NotificationDetails(
             android: AndroidNotificationDetails(
