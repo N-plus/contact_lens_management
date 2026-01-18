@@ -2801,14 +2801,6 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const Divider(height: 32),
               ],
-              _buildSectionHeader('サブスクリプション'),
-              ListTile(
-                leading: Icon(Icons.info_outline, color: themeColor),
-                title: const Text('サブスクリプションの説明'),
-                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                onTap: () => _openSubscriptionExplanation(context),
-              ),
-              const Divider(height: 32),
               _buildSectionHeader('自動更新'),
               _buildSwitchTile(
                 title: '自動スケジュール更新',
@@ -2913,6 +2905,12 @@ class SettingsPage extends StatelessWidget {
                         .openStorePage(appStoreId: '6756917635');
                   }
                 },
+              ),
+              ListTile(
+                leading: Icon(Icons.info_outline, color: themeColor),
+                title: const Text('サブスクリプションの説明'),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                onTap: () => _openSubscriptionExplanation(context),
               ),
               ListTile(
                 leading: Icon(Icons.description_outlined, color: themeColor),
