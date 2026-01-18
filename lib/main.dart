@@ -2709,6 +2709,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
               const Divider(height: 32),
+              _buildSectionHeader('コンタクトの在庫管理'),
               if (state.shouldShowInventoryOnboarding) ...[
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -2721,7 +2722,6 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
               ],
-              _buildSectionHeader('コンタクト在庫の管理'),
               if (!state.shouldShowInventoryOnboarding) ...[
                 _buildSwitchTile(
                   title: '在庫数を表示',
