@@ -2790,7 +2790,9 @@ class SettingsPage extends StatelessWidget {
                     leading:
                         Icon(Icons.workspace_premium_outlined, color: themeColor),
                     title: const Text('Premiumを試す'),
-                    subtitle: const Text('Premium機能を2週間無料で試せます'),
+                    subtitle: const Text(
+                      'プレミアム機能を2週間無料でお試しできます。\nまずはどんな機能か見てみましょう！',
+                    ),
                     trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
