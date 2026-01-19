@@ -317,6 +317,12 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
 
     await state.dismissInitialOnboarding();
 
+    if (mounted && _selectedUsageType == LensUsageType.oneDay) {
+      await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const InventoryOnboardingScreen()),
+      );
+    }
+
     if (mounted) {
       setState(() => _isProcessing = false);
     }
