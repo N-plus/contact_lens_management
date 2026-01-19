@@ -906,11 +906,8 @@ class ContactLensState extends ChangeNotifier {
 
   Future<void> setCycleLength(int days) async {
     await _updateProfile((current) {
-      final shouldUpdateInventoryThreshold = days == oneDayCycle &&
-          current.inventoryThreshold == 2 &&
-          current.inventoryCount == null &&
-          !current.showInventory &&
-          !_inventoryOnboardingDismissed;
+      final shouldUpdateInventoryThreshold =
+          days == oneDayCycle && current.inventoryThreshold == 2;
       return current.copyWith(
         cycleLength: days,
         inventoryThreshold:
