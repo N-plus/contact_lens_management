@@ -368,7 +368,7 @@ class _InventoryOnboardingScreenState
               ),
               const SizedBox(height: 12),
               Text(
-                'コンタクトレンズの残り個数を登録すると、指定した基準でアラートを受け取れます。後から設定を変更することもできます。',
+                'コンタクトレンズの残り個数を登録すると、\nホーム画面で在庫を確認でき、\n少なくなったときには通知でお知らせします。\n\n後から設定で変更することもできます。',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey[700],
                       height: 1.5,
@@ -1958,15 +1958,6 @@ class InventoryOnboardingCard extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: Colors.grey[900],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '残り個数のアラートが使えます',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[700],
-              height: 1.3,
             ),
           ),
           const SizedBox(height: 12),
