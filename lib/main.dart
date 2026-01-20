@@ -738,6 +738,8 @@ class ContactLensState extends ChangeNotifier {
   String? _productLoadError;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  Timer? _midnightRefreshTimer;
+  DateTime? _lastEvaluatedDate;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -773,6 +775,9 @@ class ContactLensState extends ChangeNotifier {
     await _persist();
     await _rescheduleNotifications();
     unawaited(_restorePurchases());
+    // 日付変更の再評価を行うため、初回ロード時に今日の日付を記録して0:00更新を設定する。
+    _lastEvaluatedDate = _today();
+    _scheduleMidnightRefresh();
     notifyListeners();
   }
 
@@ -1277,6 +1282,33 @@ class ContactLensState extends ChangeNotifier {
     return DateTime(now.year, now.month, now.day);
   }
 
+  void _scheduleMidnightRefresh() {
+    _midnightRefreshTimer?.cancel();
+    final now = DateTime.now();
+    final nextMidnight = DateTime(now.year, now.month, now.day)
+        .add(const Duration(days: 1));
+    final duration = nextMidnight.difference(now);
+    _midnightRefreshTimer = Timer(duration, () {
+      // 0:00になったら日付の再評価を行い、リスナーへ更新通知する。
+      unawaited(_handleMidnightRefresh());
+    });
+  }
+
+  Future<void> _handleMidnightRefresh() async {
+    final today = _today();
+    if (_lastEvaluatedDate != null && _dateOnly(_lastEvaluatedDate!) == today) {
+      _scheduleMidnightRefresh();
+      return;
+    }
+    // 日付が変わった場合のみ評価し直し、通知/スケジュールを更新する。
+    _lastEvaluatedDate = today;
+    _autoAdvanceAll();
+    await _persist();
+    await _rescheduleNotifications();
+    notifyListeners();
+    _scheduleMidnightRefresh();
+  }
+
   DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
   Future<void> _rescheduleNotifications() async {
@@ -1399,6 +1431,7 @@ class ContactLensState extends ChangeNotifier {
   @override
   void dispose() {
     _purchaseSubscription?.cancel();
+    _midnightRefreshTimer?.cancel();
     super.dispose();
   }
 
@@ -1450,9 +1483,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShowUsageNotStarted = isUnconfigured || isScheduled;
     final daysRemaining = isActive ? state.remainingDays : 0;
     final daysOverdue = isActive ? state.overdueDays : 0;
+    // remainingDays == 0 は交換当日なので期限切れ扱いにしない。
     final isOverdue = daysOverdue > 0;
-    final isExpired = isActive && daysRemaining <= 0;
-    final shouldShowEmptyState = shouldShowUsageNotStarted || isExpired;
+    final isExpired = isActive && isOverdue;
+    // 期限切れUIは overdueDays > 0 のときのみ表示する。
+    final shouldShowEmptyState = shouldShowUsageNotStarted || isOverdue;
     final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
     final cycleLabel = state.cycleLabel;
