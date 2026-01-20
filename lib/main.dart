@@ -1470,6 +1470,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late final AudioPlayer _audioPlayer;
+  DateTime? _lastEvaluatedDate;
+  double _progressTweenBegin = 0;
+  double _progressTweenEnd = 0;
 
   static const Color overdueColor = Color(0xE5BB5858);
 
@@ -1485,9 +1488,54 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  double _progressForDate(ContactLensState state, DateTime date) {
+    final startDate = state.startDate;
+    if (startDate == null) {
+      return 0;
+    }
+    final total = state.cycleLength;
+    if (total == 0) {
+      return 0;
+    }
+    final startDateOnly = DateUtils.dateOnly(startDate);
+    final dateOnly = DateUtils.dateOnly(date);
+    final elapsed = dateOnly.difference(startDateOnly).inDays;
+    final clamped = elapsed.clamp(0, total).toDouble();
+    return clamped / total;
+  }
+
+  void _syncProgressAnimation(ContactLensState state) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final currentProgress = state.progress;
+    if (_lastEvaluatedDate == null) {
+      _lastEvaluatedDate = today;
+      _progressTweenBegin = currentProgress;
+      _progressTweenEnd = currentProgress;
+      return;
+    }
+    if (!DateUtils.isSameDay(_lastEvaluatedDate, today)) {
+      final previousDate = today.subtract(const Duration(days: 1));
+      final previousProgress = _progressForDate(state, previousDate);
+      _lastEvaluatedDate = today;
+      _progressTweenBegin = previousProgress;
+      _progressTweenEnd = previousProgress;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _progressTweenBegin = previousProgress;
+          _progressTweenEnd = currentProgress;
+        });
+      });
+      return;
+    }
+    _progressTweenBegin = currentProgress;
+    _progressTweenEnd = currentProgress;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ContactLensState>();
+    _syncProgressAnimation(state);
     final themeColor = state.themeColor;
     final startDate = state.startDate;
     final today = state.today;
@@ -1618,10 +1666,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                           child: isActive && !isExpired
                                               ? TweenAnimationBuilder<double>(
                                                   tween: Tween<double>(
-                                                    begin: 0,
-                                                    end: state.progress,
+                                                    begin: _progressTweenBegin,
+                                                    end: _progressTweenEnd,
                                                   ),
-                                                  duration: const Duration(milliseconds: 400),
+                                                  duration: _progressTweenBegin == _progressTweenEnd
+                                                      ? Duration.zero
+                                                      : const Duration(milliseconds: 400),
                                                   curve: Curves.easeInOut,
                                                   builder: (context, animatedProgress, _) {
                                                     return CustomPaint(
