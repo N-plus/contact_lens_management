@@ -796,12 +796,26 @@ class ContactLensState extends ChangeNotifier {
   int get cycleLength => _profile.cycleLength;
   bool get hasStarted => _profile.startDate != null && _profile.hasStarted;
   DateTime? get startDate => hasStarted ? _profile.startDate : null;
+  DateTime get today => _today();
   DateTime? get exchangeDate {
     if (startDate == null) {
       return null;
     }
     final normalizedStart = _dateOnly(startDate!);
     return normalizedStart.add(Duration(days: _profile.cycleLength));
+  }
+  DateTime? get expiryDay {
+    if (exchangeDate == null) {
+      return null;
+    }
+    return _dateOnly(exchangeDate!);
+  }
+  bool get isExpired {
+    final expiry = expiryDay;
+    if (expiry == null) {
+      return false;
+    }
+    return _today().isAfter(expiry);
   }
   bool get autoSchedule => _profile.autoSchedule;
   bool get notifyDayBefore => _profile.notifyDayBefore;
@@ -834,23 +848,25 @@ class ContactLensState extends ChangeNotifier {
   Color colorForIndex(int index) => _colorWithDefaultOpacity(index);
 
   int get remainingDays {
-    if (exchangeDate == null) {
+    final expiry = expiryDay;
+    if (expiry == null) {
       return 0;
     }
     final today = _today();
-    final exchange = _dateOnly(exchangeDate!);
-    final diff = exchange.difference(today).inDays;
+    final diff = expiry.difference(today).inDays;
     return diff > 0 ? diff : 0;
   }
 
   int get overdueDays {
-    if (exchangeDate == null) {
+    final expiry = expiryDay;
+    if (expiry == null) {
       return 0;
     }
     final today = _today();
-    final exchange = _dateOnly(exchangeDate!);
-    final diff = today.difference(exchange).inDays;
-    return diff > 0 ? diff : 0;
+    if (!today.isAfter(expiry)) {
+      return 0;
+    }
+    return today.difference(expiry).inDays;
   }
 
   double get progress {
@@ -1474,8 +1490,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<ContactLensState>();
     final themeColor = state.themeColor;
     final startDate = state.startDate;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = state.today;
     final exchangeDate = state.exchangeDate;
     final isUnconfigured = startDate == null;
     final isScheduled = startDate != null && startDate.isAfter(today);
@@ -1483,11 +1498,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShowUsageNotStarted = isUnconfigured || isScheduled;
     final daysRemaining = isActive ? state.remainingDays : 0;
     final daysOverdue = isActive ? state.overdueDays : 0;
-    // remainingDays == 0 は交換当日なので期限切れ扱いにしない。
-    final isOverdue = daysOverdue > 0;
-    final isExpired = isActive && isOverdue;
-    // 期限切れUIは overdueDays > 0 のときのみ表示する。
-    final shouldShowEmptyState = shouldShowUsageNotStarted || isOverdue;
+    // 期限切れは当日ではなく翌日から。
+    final isExpired = isActive && state.isExpired;
+    final isOverdue = isExpired;
+    // 期限切れUIは期限切れ判定が true のときのみ表示する。
+    final shouldShowEmptyState = shouldShowUsageNotStarted || isExpired;
     final Color mainColor = isOverdue ? overdueColor : themeColor;
     final Color fadedColor = mainColor.withOpacity(0.2);
     final cycleLabel = state.cycleLabel;
