@@ -1498,13 +1498,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShowUsageNotStarted = isUnconfigured || isScheduled;
     final daysRemaining = isActive ? state.remainingDays : 0;
     final daysOverdue = isActive ? state.overdueDays : 0;
+    final todayDateOnly = DateTime(today.year, today.month, today.day);
     final exchangeDateDateOnly = exchangeDate == null
         ? null
         : DateTime(exchangeDate.year, exchangeDate.month, exchangeDate.day);
     // 期限切れは当日ではなく翌日から。
     final isExpired = isActive &&
         exchangeDateDateOnly != null &&
-        today.isAfter(exchangeDateDateOnly);
+        todayDateOnly.isAfter(exchangeDateDateOnly);
     final isOverdue = isExpired;
     // 期限切れUIは期限切れ判定が true のときのみ表示する。
     final shouldShowEmptyState = shouldShowUsageNotStarted || isExpired;
