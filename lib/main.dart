@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -696,6 +697,9 @@ class ContactLensState extends ChangeNotifier {
   static const _soundEnabledKey = 'soundEnabled';
   static const _showSecondProfileKey = 'showSecondProfile';
   static const _isPremiumKey = 'isPremium';
+  static const _savedAppVersionKey = 'savedAppVersion';
+  static const _postUpdateExchangeCountKey = 'postUpdateExchangeCount';
+  static const _hasRequestedReviewKey = 'hasRequestedReview';
   static const premiumMonthlyProductId = 'premium_monthly_300';
   static const premiumYearlyProductId = 'premium_yearly_2500';
   static const Set<String> premiumProductIds = {
@@ -734,6 +738,9 @@ class ContactLensState extends ChangeNotifier {
   bool _initialOnboardingDismissed = false;
   bool _showSecondProfile = true;
   bool _isPremium = false;
+  String? _savedAppVersion;
+  int _postUpdateExchangeCount = 0;
+  bool _hasRequestedReview = false;
   List<ProductDetails> _availableProducts = [];
   String? _productLoadError;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
@@ -744,6 +751,11 @@ class ContactLensState extends ChangeNotifier {
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
     _isPremium = _prefs?.getBool(_isPremiumKey) ?? false;
+    _savedAppVersion = _prefs?.getString(_savedAppVersionKey);
+    _postUpdateExchangeCount =
+        _prefs?.getInt(_postUpdateExchangeCountKey) ?? 0;
+    _hasRequestedReview = _prefs?.getBool(_hasRequestedReviewKey) ?? false;
+    await _syncAppVersionState();
     _purchaseSubscription = _inAppPurchase.purchaseStream.listen(
       _onPurchaseUpdated,
       onDone: () => _purchaseSubscription?.cancel(),
@@ -905,6 +917,7 @@ class ContactLensState extends ChangeNotifier {
         hasStarted: true,
       ),
     );
+    await _handlePostUpdateExchangeReview();
   }
 
   Future<void> recordExchangeOn(DateTime start) async {
@@ -914,6 +927,7 @@ class ContactLensState extends ChangeNotifier {
         hasStarted: true,
       ),
     );
+    await _handlePostUpdateExchangeReview();
   }
 
   Future<void> markUsageNotStarted() async {
@@ -1257,6 +1271,37 @@ class ContactLensState extends ChangeNotifier {
     for (var i = 0; i < _profiles.length; i++) {
       _profiles[i] = _profiles[i].autoAdvanced(today);
     }
+  }
+
+  Future<void> _syncAppVersionState() async {
+    final info = await PackageInfo.fromPlatform();
+    final currentVersion = info.version;
+    if (_savedAppVersion == currentVersion) {
+      return;
+    }
+    _savedAppVersion = currentVersion;
+    _postUpdateExchangeCount = 0;
+    _hasRequestedReview = false;
+    await _prefs?.setString(_savedAppVersionKey, currentVersion);
+    await _prefs?.setInt(
+      _postUpdateExchangeCountKey,
+      _postUpdateExchangeCount,
+    );
+    await _prefs?.setBool(_hasRequestedReviewKey, _hasRequestedReview);
+  }
+
+  Future<void> _handlePostUpdateExchangeReview() async {
+    _postUpdateExchangeCount += 1;
+    await _prefs?.setInt(
+      _postUpdateExchangeCountKey,
+      _postUpdateExchangeCount,
+    );
+    if (_postUpdateExchangeCount < 2 || _hasRequestedReview) {
+      return;
+    }
+    await ReviewService().requestReview();
+    _hasRequestedReview = true;
+    await _prefs?.setBool(_hasRequestedReviewKey, _hasRequestedReview);
   }
 
   Future<void> _applyPremiumRestrictions() async {
