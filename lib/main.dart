@@ -3052,6 +3052,7 @@ class SettingsPage extends StatelessWidget {
               ListTile(
                 leading: Icon(Icons.star_rate_rounded, color: themeColor),
                 title: const Text('評価・レビュー'),
+                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                 onTap: () async {
                   final didRequest = await ReviewService().requestReview();
                   if (!didRequest) {
