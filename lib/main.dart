@@ -2638,17 +2638,38 @@ class CircularProgressPainter extends CustomPainter {
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  static const _cycleRanges = <String, _CycleRange>{
+    '1day': _CycleRange(min: 1, max: 2, defaultValue: 1),
+    '2week': _CycleRange(min: 10, max: 18, defaultValue: 14),
+    '1month': _CycleRange(min: 28, max: 31, defaultValue: 30),
+  };
+
+  String _resolveCyclePeriod(int cycleLength) {
+    if (cycleLength >= _cycleRanges['1day']!.min &&
+        cycleLength <= _cycleRanges['1day']!.max) {
+      return '1day';
+    }
+    if (cycleLength >= _cycleRanges['1month']!.min &&
+        cycleLength <= _cycleRanges['1month']!.max) {
+      return '1month';
+    }
+    return '2week';
+  }
+
+  _CycleRange _rangeForPeriod(String period) {
+    return _cycleRanges[period] ?? _cycleRanges['2week']!;
+  }
+
   @override
   Widget build(BuildContext context) {
     // 例: 設定画面のボタンから手動でレビュー導線を用意する場合
     // ReviewService().openStorePage(appStoreId: '123456789');
     return Consumer<ContactLensState>(
       builder: (context, state, _) {
-        final cyclePeriod = state.cycleLength == ContactLensState.oneDayCycle
-            ? '1day'
-            : state.cycleLength == ContactLensState.oneMonthCycle
-                ? '1month'
-                : '2week';
+        final cyclePeriod = _resolveCyclePeriod(state.cycleLength);
+        final cycleRange = _rangeForPeriod(cyclePeriod);
+        final canDecreaseCycle = state.cycleLength > cycleRange.min;
+        final canIncreaseCycle = state.cycleLength < cycleRange.max;
         final themeColor = state.themeColor;
         const lensTypes = ['コンタクト', 'カラコン', '右', '左'];
         final hasSecondProfile = state.hasSecondProfile;
@@ -2725,11 +2746,11 @@ class SettingsPage extends StatelessWidget {
                 activeColor: themeColor,
                 onChanged: (value) {
                   if (value == '2week') {
-                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                    state.setCycleLength(_cycleRanges['2week']!.defaultValue);
                   } else if (value == '1month') {
-                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                    state.setCycleLength(_cycleRanges['1month']!.defaultValue);
                   } else if (value == '1day') {
-                    state.setCycleLength(ContactLensState.oneDayCycle);
+                    state.setCycleLength(_cycleRanges['1day']!.defaultValue);
                   }
                 },
               ),
@@ -2740,11 +2761,11 @@ class SettingsPage extends StatelessWidget {
                 activeColor: themeColor,
                 onChanged: (value) {
                   if (value == '2week') {
-                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                    state.setCycleLength(_cycleRanges['2week']!.defaultValue);
                   } else if (value == '1month') {
-                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                    state.setCycleLength(_cycleRanges['1month']!.defaultValue);
                   } else if (value == '1day') {
-                    state.setCycleLength(ContactLensState.oneDayCycle);
+                    state.setCycleLength(_cycleRanges['1day']!.defaultValue);
                   }
                 },
               ),
@@ -2755,11 +2776,75 @@ class SettingsPage extends StatelessWidget {
                 activeColor: themeColor,
                 onChanged: (value) {
                   if (value == '2week') {
-                    state.setCycleLength(ContactLensState.twoWeekCycle);
+                    state.setCycleLength(_cycleRanges['2week']!.defaultValue);
                   } else if (value == '1month') {
-                    state.setCycleLength(ContactLensState.oneMonthCycle);
+                    state.setCycleLength(_cycleRanges['1month']!.defaultValue);
+                  } else if (value == '1day') {
+                    state.setCycleLength(_cycleRanges['1day']!.defaultValue);
                   }
                 },
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          '期限（日数）',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        Row(
+                          children: [
+                            _CycleAdjustButton(
+                              icon: Icons.remove,
+                              isEnabled: canDecreaseCycle,
+                              onTap: canDecreaseCycle
+                                  ? () => state.setCycleLength(
+                                        (state.cycleLength - 1)
+                                            .clamp(cycleRange.min, cycleRange.max)
+                                            .toInt(),
+                                      )
+                                  : null,
+                              color: themeColor,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              '${state.cycleLength}日',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            _CycleAdjustButton(
+                              icon: Icons.add,
+                              isEnabled: canIncreaseCycle,
+                              onTap: canIncreaseCycle
+                                  ? () => state.setCycleLength(
+                                        (state.cycleLength + 1)
+                                            .clamp(cycleRange.min, cycleRange.max)
+                                            .toInt(),
+                                      )
+                                  : null,
+                              color: themeColor,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '※目安日数をもとに、少しだけ調整できます',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const Divider(
                 height: 1,
@@ -3485,6 +3570,18 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+}
+
+class _CycleRange {
+  const _CycleRange({
+    required this.min,
+    required this.max,
+    required this.defaultValue,
+  });
+
+  final int min;
+  final int max;
+  final int defaultValue;
 }
 
 class PaywallPage extends StatefulWidget {
@@ -4250,6 +4347,39 @@ class _SelectionChip extends StatelessWidget {
             color: isSelected ? color : Colors.grey[800],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CycleAdjustButton extends StatelessWidget {
+  const _CycleAdjustButton({
+    required this.icon,
+    required this.isEnabled,
+    required this.onTap,
+    required this.color,
+  });
+
+  final IconData icon;
+  final bool isEnabled;
+  final VoidCallback? onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = isEnabled ? color : Colors.grey[300];
+    final iconColor = isEnabled ? Colors.white : Colors.grey[600];
+    return InkWell(
+      onTap: isEnabled ? onTap : null,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        width: 48,
+        height: 32,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
     );
   }
