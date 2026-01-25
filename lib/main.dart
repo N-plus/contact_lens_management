@@ -2835,14 +2835,6 @@ class SettingsPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '※目安日数をもとに、少しだけ調整できます',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
                   ],
                 ),
               ),
