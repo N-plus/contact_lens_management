@@ -678,11 +678,13 @@ class BackgroundOption {
     required this.id,
     required this.label,
     this.assetPath,
+    this.themeColorIndex,
   });
 
   final String id;
   final String label;
   final String? assetPath;
+  final int? themeColorIndex;
 
   bool get isNone => assetPath == null;
 }
@@ -752,6 +754,7 @@ class ContactLensState extends ChangeNotifier {
       id: 'bear_autumn',
       label: 'クマのイラスト',
       assetPath: 'assets/backgrounds/bear_autumn.png',
+      themeColorIndex: 2,
     ),
   ];
 
@@ -867,8 +870,10 @@ class ContactLensState extends ChangeNotifier {
   TimeOfDay get notifyDayBeforeTime => _profile.notifyDayBeforeTime;
   bool get notifyDayOf => _profile.notifyDayOf;
   TimeOfDay get notifyDayOfTime => _profile.notifyDayOfTime;
-  Color get themeColor => _colorWithDefaultOpacity(_profile.themeColorIndex);
-  int get themeColorIndex => _profile.themeColorIndex;
+  int get _resolvedThemeColorIndex =>
+      selectedBackgroundOption?.themeColorIndex ?? _profile.themeColorIndex;
+  Color get themeColor => _colorWithDefaultOpacity(_resolvedThemeColorIndex);
+  int get themeColorIndex => _resolvedThemeColorIndex;
   String? get selectedBackgroundId => _selectedBackgroundId;
   BackgroundOption? get selectedBackgroundOption =>
       _backgroundOptionForId(_selectedBackgroundId);
