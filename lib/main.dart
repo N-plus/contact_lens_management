@@ -203,7 +203,6 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
                         ? '未選択'
                         : formatJapaneseDateWithWeekday(_selectedStartDate!),
                   ),
-                  subtitle: const Text('過去日付も選択できます'),
                   trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
