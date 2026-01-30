@@ -1727,307 +1727,323 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 LayoutBuilder(
                   builder: (context, constraints) {
-                final adjustedChartSize = () {
-                  final heightAllowance = constraints.maxHeight - 240;
-                  if (heightAllowance <= 0) {
-                    return chartSize;
-                  }
-                  return math.min(chartSize, math.max(200.0, heightAllowance));
-                }();
+                    final adjustedChartSize = () {
+                      final heightAllowance = constraints.maxHeight - 240;
+                      if (heightAllowance <= 0) {
+                        return chartSize;
+                      }
+                      return math.min(
+                        chartSize,
+                        math.max(200.0, heightAllowance),
+                      );
+                    }();
 
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AnimatedOpacity(
-                        duration: const Duration(milliseconds: 200),
-                        opacity: canShowSecondProfile ? 1 : 0,
-                        child: canShowSecondProfile
-                            ? Align(
-                                alignment: Alignment.centerLeft,
-                                child: ContactSwitcher(
-                                  firstLabel: state.profileName(0),
-                                  secondLabel: state.profileName(1),
-                                  selectedIndex: state.selectedProfileIndex,
-                                  color: themeColor,
-                                  onSelected: (index) => state.switchProfile(index),
-                                ),
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                      if (canShowSecondProfile) const SizedBox(height: 20),
-                      Expanded(
-                        child: Center(
-                          child: Transform.translate(
-                            offset: mainContentOffset,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: adjustedChartSize,
-                                  height: adjustedChartSize + 68,
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Positioned(
-                                        top: 0,
-                                        left: 16,
-                                        right: 16,
-                                        child: SizedBox(
-                                          height: 52,
-                                          child: Align(
-                                            alignment: Alignment.topLeft,
-                                            child: Padding(
-                                              padding: const EdgeInsets.only(top: 12),
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    cycleLabel,
-                                                    style: const TextStyle(
-                                                      fontSize: 24,
-                                                      fontWeight: FontWeight.bold,
-                                                    ),
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: canShowSecondProfile ? 1 : 0,
+                            child: canShowSecondProfile
+                                ? Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: ContactSwitcher(
+                                      firstLabel: state.profileName(0),
+                                      secondLabel: state.profileName(1),
+                                      selectedIndex: state.selectedProfileIndex,
+                                      color: themeColor,
+                                      onSelected: (index) =>
+                                          state.switchProfile(index),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          if (canShowSecondProfile) const SizedBox(height: 20),
+                          Expanded(
+                            child: Center(
+                              child: Transform.translate(
+                                offset: mainContentOffset,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: adjustedChartSize,
+                                      height: adjustedChartSize + 68,
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Positioned(
+                                            top: 0,
+                                            left: 16,
+                                            right: 16,
+                                            child: SizedBox(
+                                              height: 52,
+                                              child: Align(
+                                                alignment: Alignment.topLeft,
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(top: 12),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        cycleLabel,
+                                                        style: const TextStyle(
+                                                          fontSize: 24,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
+                                                ),
                                               ),
                                             ),
                                           ),
+                                          Positioned(
+                                            top: 60,
+                                            left: 0,
+                                            right: 0,
+                                            child: SizedBox(
+                                              width: adjustedChartSize,
+                                              height: adjustedChartSize,
+                                              child: isActive && !isExpired
+                                                  ? TweenAnimationBuilder<double>(
+                                                      tween: Tween<double>(
+                                                        begin: _progressTweenBegin,
+                                                        end: _progressTweenEnd,
+                                                      ),
+                                                      duration:
+                                                          _progressTweenBegin == _progressTweenEnd
+                                                              ? Duration.zero
+                                                              : const Duration(
+                                                                  milliseconds: 400,
+                                                                ),
+                                                      curve: Curves.easeInOut,
+                                                      builder: (context, animatedProgress, _) {
+                                                        return CustomPaint(
+                                                          size: Size(
+                                                            adjustedChartSize,
+                                                            adjustedChartSize,
+                                                          ),
+                                                          painter:
+                                                              CircularProgressPainter(
+                                                            progress: animatedProgress,
+                                                            color: mainColor,
+                                                            backgroundColor: fadedColor,
+                                                            isOverdue: isOverdue,
+                                                          ),
+                                                          child: Center(
+                                                            child: Column(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment.center,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment.center,
+                                                              children: [
+                                                                if (shouldShowExpiredWarning)
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment.center,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment.center,
+                                                                    children: [
+                                                                      Icon(
+                                                                        Icons.error_outline,
+                                                                        color: overdueColor,
+                                                                        size: 32,
+                                                                      ),
+                                                                      const SizedBox(width: 8),
+                                                                      Flexible(
+                                                                        child: Text(
+                                                                          '使用期限が過ぎています',
+                                                                          textAlign:
+                                                                              TextAlign.center,
+                                                                          maxLines: 2,
+                                                                          overflow:
+                                                                              TextOverflow.visible,
+                                                                          style: TextStyle(
+                                                                            fontSize: 20,
+                                                                            fontWeight:
+                                                                                FontWeight.w700,
+                                                                            color: overdueColor,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  )
+                                                                else
+                                                                  Row(
+                                                                    mainAxisAlignment:
+                                                                        MainAxisAlignment.center,
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment.end,
+                                                                    children: [
+                                                                      Text(
+                                                                        '交換まで',
+                                                                        style: TextStyle(
+                                                                          fontSize: 18,
+                                                                          color: Colors.grey[600],
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(width: 4),
+                                                                      Text(
+                                                                        isOverdue
+                                                                            ? '$daysOverdue'
+                                                                            : '$daysRemaining',
+                                                                        style: TextStyle(
+                                                                          fontSize: 56,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                          color: isOverdue
+                                                                              ? overdueColor
+                                                                              : themeColor,
+                                                                          height: 1,
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(width: 4),
+                                                                      Text(
+                                                                        '日',
+                                                                        style: TextStyle(
+                                                                          fontSize: 18,
+                                                                          color: Colors.grey[600],
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                const SizedBox(height: 4),
+                                                                if (isActive &&
+                                                                    exchangeDate != null &&
+                                                                    !shouldShowExpiredWarning)
+                                                                  Text(
+                                                                    '${formatJapaneseDateWithWeekday(startDate!)} ～ ${formatJapaneseDateWithWeekday(exchangeDate!)}',
+                                                                    style: const TextStyle(
+                                                                      fontSize: 16,
+                                                                      color: Colors.grey,
+                                                                    ),
+                                                                  ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    )
+                                                  : const SizedBox.shrink(),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (shouldShowEmptyState) ...[
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        isExpired
+                                            ? 'レンズの使用期限を過ぎています\n'
+                                                '新しいレンズに交換しましょう！'
+                                            : isUnconfigured
+                                                ? 'レンズ管理を始めましょう！\n'
+                                                    '下の「レンズを交換する」ボタンから\n'
+                                                    '最初の交換を記録できます'
+                                                : 'レンズ使用開始予定です！\n'
+                                                    '$scheduledStartDateLabelから管理が始まります',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: themeColor,
+                                          height: 1.5,
                                         ),
                                       ),
-                                      Positioned(
-                                        top: 60,
-                                        left: 0,
-                                        right: 0,
-                                        child: SizedBox(
-                                          width: adjustedChartSize,
-                                          height: adjustedChartSize,
-                                          child: isActive && !isExpired
-                                              ? TweenAnimationBuilder<double>(
-                                                  tween: Tween<double>(
-                                                    begin: _progressTweenBegin,
-                                                    end: _progressTweenEnd,
-                                                  ),
-                                                  duration: _progressTweenBegin == _progressTweenEnd
-                                                      ? Duration.zero
-                                                      : const Duration(milliseconds: 400),
-                                                  curve: Curves.easeInOut,
-                                                  builder: (context, animatedProgress, _) {
-                                                    return CustomPaint(
-                                                      size: Size(
-                                                        adjustedChartSize,
-                                                        adjustedChartSize,
-                                                      ),
-                                                      painter: CircularProgressPainter(
-                                                        progress: animatedProgress,
-                                                        color: mainColor,
-                                                        backgroundColor: fadedColor,
-                                                        isOverdue: isOverdue,
-                                                      ),
-                                                      child: Center(
-                                                        child: Column(
-                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment.center,
-                                                          children: [
-                                                            if (shouldShowExpiredWarning)
-                                                              Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment.center,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment.center,
-                                                                children: [
-                                                                  Icon(
-                                                                    Icons.error_outline,
-                                                                    color: overdueColor,
-                                                                    size: 32,
-                                                                  ),
-                                                                  const SizedBox(width: 8),
-                                                                  Flexible(
-                                                                    child: Text(
-                                                                      '使用期限が過ぎています',
-                                                                      textAlign: TextAlign.center,
-                                                                      maxLines: 2,
-                                                                      overflow: TextOverflow.visible,
-                                                                      style: TextStyle(
-                                                                        fontSize: 20,
-                                                                        fontWeight: FontWeight.w700,
-                                                                        color: overdueColor,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              )
-                                                            else
-                                                              Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment.center,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment.end,
-                                                                children: [
-                                                                  Text(
-                                                                    '交換まで',
-                                                                    style: TextStyle(
-                                                                      fontSize: 18,
-                                                                      color: Colors.grey[600],
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(width: 4),
-                                                                  Text(
-                                                                    isOverdue
-                                                                        ? '$daysOverdue'
-                                                                        : '$daysRemaining',
-                                                                    style: TextStyle(
-                                                                      fontSize: 56,
-                                                                      fontWeight: FontWeight.bold,
-                                                                      color: isOverdue
-                                                                          ? overdueColor
-                                                                          : themeColor,
-                                                                      height: 1,
-                                                                    ),
-                                                                  ),
-                                                                  const SizedBox(width: 4),
-                                                                  Text(
-                                                                    '日',
-                                                                    style: TextStyle(
-                                                                      fontSize: 18,
-                                                                      color: Colors.grey[600],
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            const SizedBox(height: 4),
-                                                            if (isActive &&
-                                                                exchangeDate != null &&
-                                                                !shouldShowExpiredWarning)
-                                                              Text(
-                                                                '${formatJapaneseDateWithWeekday(startDate!)} ～ ${formatJapaneseDateWithWeekday(exchangeDate!)}',
-                                                                style: const TextStyle(
-                                                                  fontSize: 16,
-                                                                  color: Colors.grey,
-                                                                ),
-                                                              ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                )
-                                              : const SizedBox.shrink(),
+                                      const SizedBox(height: 16),
+                                    ] else
+                                      const SizedBox(height: 32),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      height: 56,
+                                      child: ElevatedButton(
+                                        onPressed: () =>
+                                            _onExchangeButtonPressed(state),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: themeColor,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          elevation: 2,
+                                        ),
+                                        child: const Text(
+                                          'レンズを交換する',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (shouldShowInventoryAlert) ...[
+                                      const SizedBox(height: 24),
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange[50],
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: Colors.orange[300]!,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: Colors.orange[700],
+                                              size: 24,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Text(
+                                                '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Colors.orange[900],
+                                                  height: 1.4,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-                                if (shouldShowEmptyState) ...[
-                                  const SizedBox(height: 24),
-                                  Text(
-                                    isExpired
-                                        ? 'レンズの使用期限を過ぎています\n'
-                                            '新しいレンズに交換しましょう！'
-                                        : isUnconfigured
-                                            ? 'レンズ管理を始めましょう！\n'
-                                                '下の「レンズを交換する」ボタンから\n'
-                                                '最初の交換を記録できます'
-                                            : 'レンズ使用開始予定です！\n'
-                                                '$scheduledStartDateLabelから管理が始まります',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: themeColor,
-                                      height: 1.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                ] else
-                                  const SizedBox(height: 32),
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 56,
-                                  child: ElevatedButton(
-                                    onPressed: () => _onExchangeButtonPressed(state),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: themeColor,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      elevation: 2,
-                                    ),
-                                    child: const Text(
-                                      'レンズを交換する',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                if (shouldShowInventoryAlert) ...[
-                                  const SizedBox(height: 24),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 14,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange[50],
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.orange[300]!,
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.warning_amber_rounded,
-                                          color: Colors.orange[700],
-                                          size: 24,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            '在庫が残り ${inventoryCount ?? 0} 個です。お早めにご用意ください',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.orange[900],
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
+                              ),
                             ),
                           ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                if (shouldShowEmptyState)
+                  IgnorePointer(
+                    child: Center(
+                      child: Transform.translate(
+                        offset: const Offset(0, -32),
+                        child: Image.asset(
+                          'assets/icons/app_icon_empty_state.png',
+                          width: 180,
+                          height: 180,
                         ),
                       ),
-                      const SizedBox(height: 32),
-                    ],
-                  ),
-                );
-              },
-            ),
-            if (shouldShowEmptyState)
-              IgnorePointer(
-                child: Center(
-                  child: Transform.translate(
-                    offset: const Offset(0, -32),
-                    child: Image.asset(
-                      'assets/icons/app_icon_empty_state.png',
-                      width: 180,
-                      height: 180,
                     ),
                   ),
-                ),
-              ),
             Positioned(
               top: 10,
               right: 14,
