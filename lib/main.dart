@@ -189,7 +189,7 @@ class _InitialOnboardingScreenState extends State<InitialOnboardingScreen> {
               const SizedBox(height: 20),
               if (_needsStartDate) ...[
                 Text(
-                  '使用開始日',
+                  '現在コンタクトを使用中の場合は、使用開始日を選択してください',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
