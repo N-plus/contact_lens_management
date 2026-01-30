@@ -673,6 +673,20 @@ class ContactProfile {
   DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 }
 
+class BackgroundOption {
+  const BackgroundOption({
+    required this.id,
+    required this.label,
+    this.assetPath,
+  });
+
+  final String id;
+  final String label;
+  final String? assetPath;
+
+  bool get isNone => assetPath == null;
+}
+
 class ContactLensState extends ChangeNotifier {
   ContactLensState();
 
@@ -700,6 +714,8 @@ class ContactLensState extends ChangeNotifier {
   static const _savedAppVersionKey = 'savedAppVersion';
   static const _postUpdateExchangeCountKey = 'postUpdateExchangeCount';
   static const _hasRequestedReviewKey = 'hasRequestedReview';
+  static const _backgroundSelectionKey = 'selectedBackgroundId';
+  static const _backgroundNoneId = 'none';
   static const premiumMonthlyProductId = 'premium_monthly_300';
   static const premiumYearlyProductId = 'premium_yearly_2500';
   static const Set<String> premiumProductIds = {
@@ -727,6 +743,18 @@ class ContactLensState extends ChangeNotifier {
     Color(0xFF934545),
   ];
 
+  static const List<BackgroundOption> _availableBackgrounds = [
+    BackgroundOption(
+      id: _backgroundNoneId,
+      label: '背景なし',
+    ),
+    BackgroundOption(
+      id: 'bear_autumn',
+      label: '秋のくま',
+      assetPath: 'assets/backgrounds/bear_autumn.png',
+    ),
+  ];
+
   SharedPreferences? _prefs;
 
   final List<ContactProfile> _profiles = [
@@ -747,6 +775,7 @@ class ContactLensState extends ChangeNotifier {
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   Timer? _midnightRefreshTimer;
   DateTime? _lastEvaluatedDate;
+  String? _selectedBackgroundId;
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -766,6 +795,8 @@ class ContactLensState extends ChangeNotifier {
     _initialOnboardingDismissed =
         _prefs?.getBool(_initialOnboardingDismissedKey) ?? false;
     _showSecondProfile = _prefs?.getBool(_showSecondProfileKey) ?? true;
+    _selectedBackgroundId =
+        _normalizeBackgroundId(_prefs?.getString(_backgroundSelectionKey));
 
     final storedPrimary = await _loadProfile(0);
     final storedSecondary = await _loadProfile(1);
@@ -800,6 +831,8 @@ class ContactLensState extends ChangeNotifier {
   bool get isPremium => _isPremium;
   List<ProductDetails> get availableProducts => List.unmodifiable(_availableProducts);
   String? get productLoadError => _productLoadError;
+  List<BackgroundOption> get availableBackgroundOptions =>
+      List.unmodifiable(_availableBackgrounds);
   String get currentProfileName => _profile.name;
   String get currentLensType => _profile.lensType;
   String profileName(int index) => _profiles[index].name;
@@ -836,6 +869,11 @@ class ContactLensState extends ChangeNotifier {
   TimeOfDay get notifyDayOfTime => _profile.notifyDayOfTime;
   Color get themeColor => _colorWithDefaultOpacity(_profile.themeColorIndex);
   int get themeColorIndex => _profile.themeColorIndex;
+  String? get selectedBackgroundId => _selectedBackgroundId;
+  BackgroundOption? get selectedBackgroundOption =>
+      _backgroundOptionForId(_selectedBackgroundId);
+  String? get selectedBackgroundAsset =>
+      selectedBackgroundOption?.assetPath;
   bool get notifyInventoryAlert => _profile.inventoryAlertEnabled;
   TimeOfDay get inventoryAlertTime => _profile.inventoryAlertTime;
   bool get showInventory => _profile.showInventory;
@@ -1048,6 +1086,17 @@ class ContactLensState extends ChangeNotifier {
       await _rescheduleNotifications();
     }
     await _persist();
+    notifyListeners();
+  }
+
+  Future<void> setSelectedBackground(String? id) async {
+    final normalized = _normalizeBackgroundId(id);
+    if (_selectedBackgroundId == normalized) return;
+    _selectedBackgroundId = normalized;
+    await _prefs?.setString(
+      _backgroundSelectionKey,
+      _selectedBackgroundId ?? _backgroundNoneId,
+    );
     notifyListeners();
   }
 
@@ -1336,6 +1385,10 @@ class ContactLensState extends ChangeNotifier {
     );
     await _prefs?.setBool(_showSecondProfileKey, _showSecondProfile);
     await _prefs?.setBool(_isPremiumKey, _isPremium);
+    await _prefs?.setString(
+      _backgroundSelectionKey,
+      _selectedBackgroundId ?? _backgroundNoneId,
+    );
   }
 
   DateTime _today() {
@@ -1503,6 +1556,29 @@ class ContactLensState extends ChangeNotifier {
     }
     return baseColor;
   }
+
+  String? _normalizeBackgroundId(String? id) {
+    if (id == null || id.isEmpty || id == _backgroundNoneId) {
+      return null;
+    }
+    final option = _backgroundOptionForId(id);
+    if (option == null || option.assetPath == null) {
+      return null;
+    }
+    return id;
+  }
+
+  BackgroundOption? _backgroundOptionForId(String? id) {
+    if (id == null) {
+      return null;
+    }
+    for (final option in _availableBackgrounds) {
+      if (option.id == id) {
+        return option;
+      }
+    }
+    return null;
+  }
 }
 
 
@@ -1582,6 +1658,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final state = context.watch<ContactLensState>();
     _syncProgressAnimation(state);
     final themeColor = state.themeColor;
+    final backgroundAsset = state.selectedBackgroundAsset;
     final startDate = state.startDate;
     final today = state.today;
     final exchangeDate = state.exchangeDate;
@@ -1630,6 +1707,19 @@ class _HomeScreenState extends State<HomeScreen> {
         top: false,
         child: Stack(
           children: [
+            if (backgroundAsset != null) ...[
+              Positioned.fill(
+                child: Image.asset(
+                  backgroundAsset,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned.fill(
+                child: Container(
+                  color: Colors.white.withOpacity(0.7),
+                ),
+              ),
+            ],
             LayoutBuilder(
               builder: (context, constraints) {
                 final adjustedChartSize = () {
@@ -3094,6 +3184,35 @@ class SettingsPage extends StatelessWidget {
                 },
               ),
               const Divider(height: 32),
+              _buildSectionHeader('背景設定'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.2,
+                  ),
+                  itemCount: state.availableBackgroundOptions.length,
+                  itemBuilder: (context, index) {
+                    final option = state.availableBackgroundOptions[index];
+                    final isSelected = state.selectedBackgroundId == option.id ||
+                        (state.selectedBackgroundId == null && option.isNone);
+                    return _buildBackgroundOption(
+                      option: option,
+                      isSelected: isSelected,
+                      accentColor: themeColor,
+                      onTap: () => state.setSelectedBackground(
+                        option.isNone ? null : option.id,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Divider(height: 32),
               _buildSectionHeader('テーマカラー'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -3558,6 +3677,84 @@ class SettingsPage extends StatelessWidget {
                 size: 32,
               )
             : null,
+      ),
+    );
+  }
+
+  Widget _buildBackgroundOption({
+    required BackgroundOption option,
+    required bool isSelected,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
+    final borderColor = isSelected ? accentColor : Colors.grey[300]!;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: borderColor,
+            width: isSelected ? 2 : 1,
+          ),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: option.assetPath == null
+                    ? Container(
+                        color: Colors.grey[100],
+                        child: Center(
+                          child: Text(
+                            '背景なし',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Image.asset(
+                        option.assetPath!,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    option.label,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    size: 16,
+                    color: accentColor,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
