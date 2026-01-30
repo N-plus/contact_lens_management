@@ -1696,32 +1696,37 @@ class _HomeScreenState extends State<HomeScreen> {
     final shouldShiftMainContent = secondVisible && shouldShowInventoryAlert;
     final mainContentOffset =
         shouldShiftMainContent ? const Offset(0, -24) : Offset.zero;
+    final hasBackground = backgroundAsset != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('コンタクト交換管理'),
-        backgroundColor: themeColor,
-        elevation: 0,
-      ),
-      body: SafeArea(
-        top: false,
-        child: Stack(
-          children: [
-            if (backgroundAsset != null) ...[
-              Positioned.fill(
-                child: Image.asset(
-                  backgroundAsset,
-                  fit: BoxFit.cover,
-                ),
+      appBar: hasBackground
+          ? null
+          : AppBar(
+              title: const Text('コンタクト交換管理'),
+              backgroundColor: themeColor,
+              elevation: 0,
+            ),
+      body: Stack(
+        children: [
+          if (hasBackground) ...[
+            Positioned.fill(
+              child: Image.asset(
+                backgroundAsset!,
+                fit: BoxFit.cover,
               ),
-              Positioned.fill(
-                child: Container(
-                  color: Colors.white.withOpacity(0.7),
-                ),
+            ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.white.withOpacity(0.7),
               ),
-            ],
-            LayoutBuilder(
-              builder: (context, constraints) {
+            ),
+          ],
+          SafeArea(
+            top: hasBackground,
+            child: Stack(
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
                 final adjustedChartSize = () {
                   final heightAllowance = constraints.maxHeight - 240;
                   if (heightAllowance <= 0) {
