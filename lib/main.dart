@@ -750,7 +750,7 @@ class ContactLensState extends ChangeNotifier {
     ),
     BackgroundOption(
       id: 'bear_autumn',
-      label: '秋のくま',
+      label: 'クマのイラスト',
       assetPath: 'assets/backgrounds/bear_autumn.png',
     ),
   ];
