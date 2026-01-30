@@ -2044,40 +2044,42 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-            Positioned(
-              top: 10,
-              right: 14,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 2, right: 2),
-                  child: IconButton(
-                    iconSize: 40,
-                    padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 48, minHeight: 48),
-                    splashRadius: 26,
-                    icon: const Icon(
-                      Icons.settings,
-                      color: Colors.black87,
-                    ),
-                    onPressed: () async {
-                      if (state.soundEnabled) {
-                        await _audioPlayer.play(
-                          AssetSource('sounds/決定ボタンを押す50.mp3'),
-                        );
-                      }
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SettingsPage(),
+                Positioned(
+                  top: 10,
+                  right: 14,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 2, right: 2),
+                      child: IconButton(
+                        iconSize: 40,
+                        padding: EdgeInsets.zero,
+                        constraints:
+                            const BoxConstraints(minWidth: 48, minHeight: 48),
+                        splashRadius: 26,
+                        icon: const Icon(
+                          Icons.settings,
+                          color: Colors.black87,
                         ),
-                      );
-                    },
+                        onPressed: () async {
+                          if (state.soundEnabled) {
+                            await _audioPlayer.play(
+                              AssetSource('sounds/決定ボタンを押す50.mp3'),
+                            );
+                          }
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const SettingsPage(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
