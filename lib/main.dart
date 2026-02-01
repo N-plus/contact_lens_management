@@ -1726,7 +1726,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
           SafeArea(
-            top: hasBackground,
+            top: false,
             child: Stack(
               children: [
                 LayoutBuilder(
@@ -1747,6 +1747,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (hasBackground)
+                            SizedBox(
+                              height: MediaQuery.of(context).padding.top +
+                                  kToolbarHeight,
+                            ),
                           AnimatedOpacity(
                             duration: const Duration(milliseconds: 200),
                             opacity: canShowSecondProfile ? 1 : 0,
