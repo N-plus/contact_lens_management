@@ -1717,7 +1717,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Image.asset(
                 backgroundAsset!,
                 fit: BoxFit.cover,
-                alignment: const Alignment(0, -0.15),
+                alignment: const Alignment(0, -0.6),
               ),
             ),
             Positioned.fill(
