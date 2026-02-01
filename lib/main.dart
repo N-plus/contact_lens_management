@@ -1714,10 +1714,13 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           if (hasBackground) ...[
             Positioned.fill(
-              child: Image.asset(
-                backgroundAsset!,
-                fit: BoxFit.cover,
-                alignment: const Alignment(0, -0.6),
+              child: Transform.translate(
+                offset: const Offset(0, -40),
+                child: Image.asset(
+                  backgroundAsset!,
+                  fit: BoxFit.cover,
+                  alignment: const Alignment(0, -0.6),
+                ),
               ),
             ),
             Positioned.fill(
