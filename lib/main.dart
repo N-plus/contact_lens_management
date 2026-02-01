@@ -8,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -712,9 +711,10 @@ class ContactLensState extends ChangeNotifier {
   static const _soundEnabledKey = 'soundEnabled';
   static const _showSecondProfileKey = 'showSecondProfile';
   static const _isPremiumKey = 'isPremium';
-  static const _savedAppVersionKey = 'savedAppVersion';
-  static const _postUpdateExchangeCountKey = 'postUpdateExchangeCount';
-  static const _hasRequestedReviewKey = 'hasRequestedReview';
+  static const _exchangeCountKey = 'exchangeCount';
+  static const _backgroundSetExchangeCountKey = 'backgroundSetExchangeCount';
+  static const _hasSelectedBackgroundKey = 'hasSelectedBackground';
+  static const _hasCompletedReviewKey = 'hasCompletedReview';
   static const _backgroundSelectionKey = 'selectedBackgroundId';
   static const _backgroundNoneId = 'none';
   static const premiumMonthlyProductId = 'premium_monthly_300';
@@ -768,9 +768,11 @@ class ContactLensState extends ChangeNotifier {
   bool _initialOnboardingDismissed = false;
   bool _showSecondProfile = true;
   bool _isPremium = false;
-  String? _savedAppVersion;
-  int _postUpdateExchangeCount = 0;
-  bool _hasRequestedReview = false;
+  int _exchangeCount = 0;
+  int? _backgroundSetExchangeCount;
+  bool _hasSelectedBackground = false;
+  bool _hasCompletedReview = false;
+  bool _reviewPromptedThisSession = false;
   List<ProductDetails> _availableProducts = [];
   String? _productLoadError;
   final InAppPurchase _inAppPurchase = InAppPurchase.instance;
@@ -782,11 +784,12 @@ class ContactLensState extends ChangeNotifier {
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
     _isPremium = _prefs?.getBool(_isPremiumKey) ?? false;
-    _savedAppVersion = _prefs?.getString(_savedAppVersionKey);
-    _postUpdateExchangeCount =
-        _prefs?.getInt(_postUpdateExchangeCountKey) ?? 0;
-    _hasRequestedReview = _prefs?.getBool(_hasRequestedReviewKey) ?? false;
-    await _syncAppVersionState();
+    _exchangeCount = _prefs?.getInt(_exchangeCountKey) ?? 0;
+    _backgroundSetExchangeCount =
+        _prefs?.getInt(_backgroundSetExchangeCountKey);
+    _hasSelectedBackground =
+        _prefs?.getBool(_hasSelectedBackgroundKey) ?? false;
+    _hasCompletedReview = _prefs?.getBool(_hasCompletedReviewKey) ?? false;
     _purchaseSubscription = _inAppPurchase.purchaseStream.listen(
       _onPurchaseUpdated,
       onDone: () => _purchaseSubscription?.cancel(),
@@ -959,7 +962,7 @@ class ContactLensState extends ChangeNotifier {
         hasStarted: true,
       ),
     );
-    await _handlePostUpdateExchangeReview();
+    await _handleExchangeReviewTrigger();
   }
 
   Future<void> recordExchangeOn(DateTime start) async {
@@ -969,7 +972,7 @@ class ContactLensState extends ChangeNotifier {
         hasStarted: true,
       ),
     );
-    await _handlePostUpdateExchangeReview();
+    await _handleExchangeReviewTrigger();
   }
 
   Future<void> markUsageNotStarted() async {
@@ -1101,6 +1104,15 @@ class ContactLensState extends ChangeNotifier {
       _backgroundSelectionKey,
       _selectedBackgroundId ?? _backgroundNoneId,
     );
+    if (normalized != null) {
+      _hasSelectedBackground = true;
+      _backgroundSetExchangeCount = _exchangeCount;
+      await _prefs?.setBool(_hasSelectedBackgroundKey, true);
+      await _prefs?.setInt(
+        _backgroundSetExchangeCountKey,
+        _backgroundSetExchangeCount ?? 0,
+      );
+    }
     notifyListeners();
   }
 
@@ -1326,35 +1338,34 @@ class ContactLensState extends ChangeNotifier {
     }
   }
 
-  Future<void> _syncAppVersionState() async {
-    final info = await PackageInfo.fromPlatform();
-    final currentVersion = info.version;
-    if (_savedAppVersion == currentVersion) {
+  Future<void> _handleExchangeReviewTrigger() async {
+    final previousExchangeCount = _exchangeCount;
+    _exchangeCount += 1;
+    await _prefs?.setInt(_exchangeCountKey, _exchangeCount);
+
+    if (_hasCompletedReview || _reviewPromptedThisSession) {
       return;
     }
-    _savedAppVersion = currentVersion;
-    _postUpdateExchangeCount = 0;
-    _hasRequestedReview = false;
-    await _prefs?.setString(_savedAppVersionKey, currentVersion);
-    await _prefs?.setInt(
-      _postUpdateExchangeCountKey,
-      _postUpdateExchangeCount,
-    );
-    await _prefs?.setBool(_hasRequestedReviewKey, _hasRequestedReview);
+
+    final shouldTriggerFromBackground = _hasSelectedBackground &&
+        _backgroundSetExchangeCount != null &&
+        previousExchangeCount == _backgroundSetExchangeCount;
+    final shouldTriggerFromSecondExchange = _exchangeCount == 2;
+
+    if (!shouldTriggerFromBackground && !shouldTriggerFromSecondExchange) {
+      return;
+    }
+
+    await ReviewService().requestReview();
+    _reviewPromptedThisSession = true;
   }
 
-  Future<void> _handlePostUpdateExchangeReview() async {
-    _postUpdateExchangeCount += 1;
-    await _prefs?.setInt(
-      _postUpdateExchangeCountKey,
-      _postUpdateExchangeCount,
-    );
-    if (_postUpdateExchangeCount < 2 || _hasRequestedReview) {
+  Future<void> markReviewCompleted() async {
+    if (_hasCompletedReview) {
       return;
     }
-    await ReviewService().requestReview();
-    _hasRequestedReview = true;
-    await _prefs?.setBool(_hasRequestedReviewKey, _hasRequestedReview);
+    _hasCompletedReview = true;
+    await _prefs?.setBool(_hasCompletedReviewKey, true);
   }
 
   Future<void> _applyPremiumRestrictions() async {
@@ -3294,6 +3305,7 @@ class SettingsPage extends StatelessWidget {
                     await ReviewService()
                         .openStorePage(appStoreId: '6756917635');
                   }
+                  await state.markReviewCompleted();
                 },
               ),
               ListTile(
