@@ -2054,10 +2054,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 Positioned(
-                  top: 10 +
-                      (hasBackground
-                          ? MediaQuery.of(context).padding.top + kToolbarHeight
-                          : 0),
+                  top: hasBackground
+                      ? MediaQuery.of(context).padding.top + 8
+                      : 10,
                   right: 14,
                   child: SafeArea(
                     child: Padding(
