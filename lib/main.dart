@@ -715,7 +715,8 @@ class ContactLensState extends ChangeNotifier {
   static const _backgroundSetExchangeCountKey = 'backgroundSetExchangeCount';
   static const _hasSelectedBackgroundKey = 'hasSelectedBackground';
   static const _hasCompletedReviewKey = 'hasCompletedReview';
-  static const _backgroundSelectionKey = 'selectedBackgroundId';
+  static const _backgroundSelectionKeyPrefix = 'selectedBackgroundId_';
+  static const _legacyBackgroundSelectionKey = 'selectedBackgroundId';
   static const _backgroundNoneId = 'none';
   static const premiumMonthlyProductId = 'premium_monthly_300';
   static const premiumYearlyProductId = 'premium_yearly_2500';
@@ -779,7 +780,7 @@ class ContactLensState extends ChangeNotifier {
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   Timer? _midnightRefreshTimer;
   DateTime? _lastEvaluatedDate;
-  String? _selectedBackgroundId;
+  final List<String?> _selectedBackgroundIds = [null, null];
 
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
@@ -800,8 +801,13 @@ class ContactLensState extends ChangeNotifier {
     _initialOnboardingDismissed =
         _prefs?.getBool(_initialOnboardingDismissedKey) ?? false;
     _showSecondProfile = _prefs?.getBool(_showSecondProfileKey) ?? true;
-    _selectedBackgroundId =
-        _normalizeBackgroundId(_prefs?.getString(_backgroundSelectionKey));
+    final legacyBackgroundId =
+        _normalizeBackgroundId(_prefs?.getString(_legacyBackgroundSelectionKey));
+    for (var i = 0; i < _profiles.length; i++) {
+      _selectedBackgroundIds[i] = _normalizeBackgroundId(
+        _prefs?.getString('$_backgroundSelectionKeyPrefix$i'),
+      );
+    }
 
     final storedPrimary = await _loadProfile(0);
     final storedSecondary = await _loadProfile(1);
@@ -816,6 +822,10 @@ class ContactLensState extends ChangeNotifier {
     }
     _selectedProfileIndex =
         _selectedProfileIndex.clamp(0, _profiles.length - 1).toInt();
+    if (legacyBackgroundId != null &&
+        _selectedBackgroundIds[_selectedProfileIndex] == null) {
+      _selectedBackgroundIds[_selectedProfileIndex] = legacyBackgroundId;
+    }
 
     _autoAdvanceAll();
     await queryProducts();
@@ -876,9 +886,10 @@ class ContactLensState extends ChangeNotifier {
       selectedBackgroundOption?.themeColorIndex ?? _profile.themeColorIndex;
   Color get themeColor => _colorWithDefaultOpacity(_resolvedThemeColorIndex);
   int get themeColorIndex => _resolvedThemeColorIndex;
-  String? get selectedBackgroundId => _selectedBackgroundId;
+  String? get selectedBackgroundId =>
+      _selectedBackgroundIds[_selectedProfileIndex];
   BackgroundOption? get selectedBackgroundOption =>
-      _backgroundOptionForId(_selectedBackgroundId);
+      _backgroundOptionForId(selectedBackgroundId);
   String? get selectedBackgroundAsset =>
       selectedBackgroundOption?.assetPath;
   bool get notifyInventoryAlert => _profile.inventoryAlertEnabled;
@@ -1098,11 +1109,12 @@ class ContactLensState extends ChangeNotifier {
 
   Future<void> setSelectedBackground(String? id) async {
     final normalized = _normalizeBackgroundId(id);
-    if (_selectedBackgroundId == normalized) return;
-    _selectedBackgroundId = normalized;
+    final currentIndex = _selectedProfileIndex;
+    if (_selectedBackgroundIds[currentIndex] == normalized) return;
+    _selectedBackgroundIds[currentIndex] = normalized;
     await _prefs?.setString(
-      _backgroundSelectionKey,
-      _selectedBackgroundId ?? _backgroundNoneId,
+      '$_backgroundSelectionKeyPrefix$currentIndex',
+      normalized ?? _backgroundNoneId,
     );
     if (normalized != null) {
       _hasSelectedBackground = true;
@@ -1400,10 +1412,12 @@ class ContactLensState extends ChangeNotifier {
     );
     await _prefs?.setBool(_showSecondProfileKey, _showSecondProfile);
     await _prefs?.setBool(_isPremiumKey, _isPremium);
-    await _prefs?.setString(
-      _backgroundSelectionKey,
-      _selectedBackgroundId ?? _backgroundNoneId,
-    );
+    for (var i = 0; i < _profiles.length; i++) {
+      await _prefs?.setString(
+        '$_backgroundSelectionKeyPrefix$i',
+        _selectedBackgroundIds[i] ?? _backgroundNoneId,
+      );
+    }
   }
 
   DateTime _today() {
@@ -3439,7 +3453,7 @@ class SettingsPage extends StatelessWidget {
   ) async {
     final step1 = await _showContactSetupStep(
       context,
-      title: 'Step 1 / 2: 1つ目のコンタクト',
+      title: '1つ目のコンタクト',
       initialName: state.profileName(0),
       initialLensType: state.profileLensType(0),
     );
@@ -3448,7 +3462,7 @@ class SettingsPage extends StatelessWidget {
 
     final step2 = await _showContactSetupStep(
       context,
-      title: 'Step 2 / 2: 2つ目のコンタクト',
+      title: '2つ目のコンタクト',
       initialName: state.profileName(1),
       initialLensType: state.profileLensType(1),
       confirmLabel: '登録',
